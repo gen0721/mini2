@@ -1,7 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
 :root {
   --bg:       #0d0d14;
   --bg2:      #12121c;
   --bg3:      #1a1a28;
+  --bg4:      #222235;
   --border:   rgba(255,255,255,0.07);
   --border2:  rgba(255,255,255,0.12);
   --accent:   #f5c842;
@@ -18,10 +21,12 @@
   --r:        14px;
   --r2:       20px;
   --shadow:   0 8px 32px rgba(0,0,0,0.5);
+  --nav-h:    64px;       /* высота хедера */
+  --bot-nav:  64px;       /* высота нижней мобильной панели */
 }
 
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-html { scroll-behavior:smooth; }
+html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
 body {
   background: var(--bg);
   color: var(--t1);
@@ -35,18 +40,23 @@ input,textarea,select,button { font-family: inherit; }
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; display: block; }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg2); }
-::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+/* ── Scrollbar ───────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
 
+/* ── Buttons ─────────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 12px 24px; border-radius: var(--r); border: none; cursor: pointer;
   font-family: var(--font-h); font-weight: 700; font-size: 14px;
   letter-spacing: 0.03em; transition: all 0.2s; white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .btn-primary { background: var(--accent); color: #0d0d14; box-shadow: 0 4px 20px rgba(245,200,66,0.3); }
 .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 8px 28px rgba(245,200,66,0.4); }
+.btn-primary:active { transform: scale(0.97); }
 .btn-secondary { background: var(--bg3); color: var(--t1); border: 1px solid var(--border2); }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 .btn-ghost { background: transparent; color: var(--t2); border: 1px solid var(--border); }
@@ -57,19 +67,24 @@ img { max-width: 100%; display: block; }
 .btn-sm { padding: 8px 16px; font-size: 12px; }
 .btn-full { width: 100%; }
 
+/* ── Inputs ──────────────────────────────────────────────────────────────────── */
 .inp {
   width: 100%; padding: 14px 16px; background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--r); color: var(--t1); font-size: 15px; transition: border 0.2s; outline: none;
+  -webkit-appearance: none;
 }
 .inp:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(245,200,66,0.1); }
 .inp::placeholder { color: var(--t4); }
 
+/* ── Cards ───────────────────────────────────────────────────────────────────── */
 .card {
   background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2);
   overflow: hidden; transition: all 0.25s;
 }
 .card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow); }
+@media (hover: none) { .card:hover { transform: none; } }
 
+/* ── Badges ──────────────────────────────────────────────────────────────────── */
 .badge {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 4px 10px; border-radius: 100px; font-size: 11px; font-weight: 700;
@@ -80,25 +95,55 @@ img { max-width: 100%; display: block; }
 .badge-red    { background: rgba(231,76,60,0.12);  color: var(--red);   border: 1px solid rgba(231,76,60,0.3); }
 .badge-purple { background: rgba(124,106,255,0.12); color: var(--purple); border: 1px solid rgba(124,106,255,0.3); }
 
+/* ── Skeleton ────────────────────────────────────────────────────────────────── */
 .skel { background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 50%, var(--bg2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--r); }
+
+/* ── Animations ──────────────────────────────────────────────────────────────── */
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-@keyframes fadeIn { from{opacity:0} to{opacity:1} }
-@keyframes spin { to{transform:rotate(360deg)} }
+@keyframes fadeUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes spin    { to{transform:rotate(360deg)} }
+@keyframes slideIn { from{transform:translateX(100%)} to{transform:translateX(0)} }
+@keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
 
 .anim-up { animation: fadeUp 0.4s ease both; }
 .anim-in { animation: fadeIn 0.3s ease both; }
 
+/* ── Grid ────────────────────────────────────────────────────────────────────── */
 .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
-@media(max-width:768px){ .grid-4{grid-template-columns:repeat(2,1fr)} .grid-3{grid-template-columns:repeat(2,1fr)} }
-@media(max-width:480px){ .grid-2,.grid-3,.grid-4{grid-template-columns:1fr} }
+@media(max-width:1024px){ .grid-4{grid-template-columns:repeat(3,1fr)} }
+@media(max-width:768px) { .grid-4{grid-template-columns:repeat(2,1fr)} .grid-3{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:480px) { .grid-2,.grid-3,.grid-4{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:360px) { .grid-2,.grid-3,.grid-4{grid-template-columns:1fr} }
 
+/* ── Page container ──────────────────────────────────────────────────────────── */
+.page { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+@media(max-width:768px) { .page { padding: 24px 16px; } }
+
+/* ── Mobile bottom padding (for bottom nav) ─────────────────────────────────── */
+@media(max-width:768px) {
+  main { padding-bottom: var(--bot-nav) !important; }
+}
+
+/* ── Noise texture overlay ───────────────────────────────────────────────────── */
 body::before {
   content: '';
   position: fixed; inset: 0; pointer-events: none; z-index: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
   background-size: 256px;
   opacity: 0.4;
+}
+
+/* ── Mobile touch improvements ───────────────────────────────────────────────── */
+@media(max-width:768px) {
+  .btn { min-height: 44px; }
+  .inp { min-height: 48px; font-size: 16px; } /* prevent zoom on iOS */
+  * { -webkit-tap-highlight-color: transparent; }
+}
+
+/* ── Safe area for iPhone notch ─────────────────────────────────────────────── */
+@supports(padding: max(0px)) {
+  body { padding-bottom: env(safe-area-inset-bottom); }
 }
