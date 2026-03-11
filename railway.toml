@@ -5,8 +5,6 @@ buildCommand = "cd frontend && npm install && npm run build && cd ../backend && 
 [deploy]
 startCommand = "node backend/server.js"
 healthcheckPath = "/api/health"
-restartPolicyType = "on-failure"
-restartPolicyMaxRetries = 3
 
 [[volumes]]
 mountPath = "/app/data"
