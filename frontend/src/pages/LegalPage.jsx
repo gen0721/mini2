@@ -100,23 +100,16 @@ const PAGES = {
     contacts: [
       {
         icon: '💬',
-        label: 'Telegram (основной)',
-        value: '@minions_support',
-        href: 'https://t.me/minions_support',
+        label: 'Telegram поддержка',
+        value: '@givi_hu',
+        href: 'https://t.me/givi_hu',
         desc: 'Быстрый ответ — до 2 часов',
-      },
-      {
-        icon: '🤖',
-        label: 'Telegram-бот поддержки',
-        value: '@MinionsMarketBot',
-        href: 'https://t.me/MinionsMarketBot',
-        desc: 'Открыть тикет, статус сделки',
       },
       {
         icon: '📧',
         label: 'Email',
-        value: 'support@minions.market',
-        href: 'mailto:support@minions.market',
+        value: 'anvarikromov778@gmail.com',
+        href: 'mailto:anvarikromov778@gmail.com',
         desc: 'Для официальных запросов',
       },
     ],
