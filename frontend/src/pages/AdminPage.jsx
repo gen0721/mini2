@@ -11,7 +11,9 @@ const STATUS_COLOR = { active:'var(--green)', pending:'var(--accent)', completed
 const STATUS_LABEL = { active:'Активна', pending:'Ожидание', completed:'Завершена', disputed:'Спор', refunded:'Возврат' }
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(!!localStorage.getItem('mn_admin_token'))
+  const [authed, setAuthed] = useState(
+    !!localStorage.getItem('mn_admin_token') || !!localStorage.getItem('mn_token')
+  )
   const [login, setLogin]   = useState('')
   const [pass, setPass]     = useState('')
   const [tab, setTab]       = useState('stats')
