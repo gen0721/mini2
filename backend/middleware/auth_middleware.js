@@ -68,14 +68,30 @@ function adminAuth(req, res, next) {
 function adminPanelAuth(req, res, next) {
   const token = req.headers['x-admin-token'];
   if (!token) return res.status(401).json({ error: 'Admin token required' });
+
+  // Способ 1: главный admin-panel токен (логин/пароль из env)
   try {
     const payload = jwt.verify(token, getSecret() + '_admin');
-    if (payload.role !== 'admin') throw new Error();
-    req.adminId = payload.adminId;
-    next();
-  } catch {
-    return res.status(401).json({ error: 'Invalid admin token' });
-  }
+    if (payload.role === 'admin') {
+      req.adminId = payload.adminId;
+      req.isSuperAdmin = true;
+      return next();
+    }
+  } catch {}
+
+  // Способ 2: обычный JWT суб-админа (is_sub_admin = 1 в БД)
+  try {
+    const { userId } = jwt.verify(token, getSecret());
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    if (user && (user.is_admin || user.is_sub_admin)) {
+      req.adminId = userId;
+      req.isSuperAdmin = !!user.is_admin;
+      req.isSubAdmin = !!user.is_sub_admin;
+      return next();
+    }
+  } catch {}
+
+  return res.status(401).json({ error: 'Invalid admin token' });
 }
 
 module.exports = { generateToken, generateAdminToken, auth, adminAuth, adminPanelAuth };
