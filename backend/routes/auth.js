@@ -34,26 +34,25 @@ function validateUsername(u) {
 }
 
 // ── POST /auth/register/init ──────────────────────────────────────────────────
-// Check username availability
 router.post('/register/init', (req, res) => {
   const { username } = req.body;
   if (!username || !validateUsername(username)) {
     return res.status(400).json({ error: 'Недопустимый логин (3-24 символа, только a-z 0-9 _)' });
   }
-  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username.toLowerCase());
-  if (existing) return res.status(409).json({ error: 'Логин уже занят' });
+  // A "taken" user is one that has a password set (fully registered)
+  const existing = db.prepare('SELECT id, password FROM users WHERE username = ?').get(username.toLowerCase());
+  if (existing?.password) return res.status(409).json({ error: 'Логин уже занят' });
   res.json({ ok: true });
 });
 
 // ── POST /auth/register/check ─────────────────────────────────────────────────
-// Return bot name for user to request OTP
 router.post('/register/check', (req, res) => {
   const { username } = req.body;
   if (!username || !validateUsername(username)) {
     return res.status(400).json({ error: 'Недопустимый логин' });
   }
-  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username.toLowerCase());
-  if (existing) return res.status(409).json({ error: 'Логин уже занят' });
+  const existing = db.prepare('SELECT id, password FROM users WHERE username = ?').get(username.toLowerCase());
+  if (existing?.password) return res.status(409).json({ error: 'Логин уже занят' });
 
   const bot = getBot();
   const botUsername = bot?.username || process.env.BOT_USERNAME || 'MinionsMarketBot';
@@ -69,33 +68,42 @@ router.post('/register/verify', async (req, res) => {
     if (!validateUsername(username)) return res.status(400).json({ error: 'Недопустимый логин' });
 
     const uname = username.toLowerCase();
-    const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(uname);
-    if (existing) return res.status(409).json({ error: 'Логин уже занят' });
+    const trimmedCode = code.trim();
+    const now = Math.floor(Date.now() / 1000);
 
-    // Find pending OTP for this username
-    // OTP is linked by username (stored as pending_username in otp)
-    const pendingOtp = db.prepare(
-      `SELECT * FROM users WHERE otp_code = ? AND otp_used = 0 AND otp_expires > ? AND username IS NULL LIMIT 1`
-    ).get(code, Math.floor(Date.now() / 1000));
+    // Check if already fully registered
+    const alreadyDone = db.prepare('SELECT id, password FROM users WHERE username = ?').get(uname);
+    if (alreadyDone?.password) return res.status(409).json({ error: 'Логин уже занят' });
 
-    // Alternative: check if a stub user was created with this username
-    const stubUser = db.prepare(
+    // PRIMARY: find stub user by username + code (bot created it via /code <username>)
+    let stubUser = db.prepare(
       `SELECT * FROM users WHERE username = ? AND otp_code = ? AND otp_used = 0 AND otp_expires > ?`
-    ).get(uname, code, Math.floor(Date.now() / 1000));
+    ).get(uname, trimmedCode, now);
+
+    // FALLBACK: find stub by code only (handles edge case where username was re-created)
+    if (!stubUser) {
+      const byCode = db.prepare(
+        `SELECT * FROM users WHERE otp_code = ? AND otp_used = 0 AND otp_expires > ? AND password IS NULL`
+      ).all(trimmedCode, now);
+
+      // Match by username among results
+      stubUser = byCode.find(u => u.username === uname) || null;
+    }
 
     if (!stubUser) {
-      return res.status(400).json({ error: 'Неверный или просроченный код. Запросите новый в боте командой /code ' + uname });
+      return res.status(400).json({
+        error: `Неверный или просроченный код. Запросите новый командой /code ${uname} в боте.`
+      });
     }
 
     const hash = await bcrypt.hash(password, 12);
     db.prepare(
-      `UPDATE users SET password = ?, otp_used = 1, otp_code = NULL, is_verified = 1 WHERE id = ?`
+      `UPDATE users SET password = ?, otp_used = 1, otp_code = NULL, otp_expires = NULL, is_verified = 1 WHERE id = ?`
     ).run(hash, stubUser.id);
 
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(stubUser.id);
     const token = generateToken(user.id);
 
-    // Send welcome notification
     if (user.telegram_id) notify.notifyRegistered(user).catch(() => {});
 
     res.json({ token, user: sanitizeUser(user) });
@@ -122,6 +130,8 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ error: `Аккаунт заблокирован${until}. ${user.ban_reason || ''}` });
     }
 
+    db.prepare('UPDATE users SET last_active = ? WHERE id = ?').run(Math.floor(Date.now() / 1000), user.id);
+
     const token = generateToken(user.id);
     res.json({ token, user: sanitizeUser(user) });
   } catch (e) {
@@ -136,7 +146,6 @@ router.post('/reset/request', (req, res) => {
   if (!username) return res.status(400).json({ error: 'Введите логин' });
 
   const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username.toLowerCase());
-  // Always return ok to prevent username enumeration
   const botUsername = getBot()?.username || process.env.BOT_USERNAME || 'MinionsMarketBot';
 
   if (user && user.telegram_id) {
@@ -158,7 +167,7 @@ router.post('/reset/confirm', async (req, res) => {
 
     const user = db.prepare(
       `SELECT * FROM users WHERE username = ? AND reset_code = ? AND reset_expires > ?`
-    ).get(username.toLowerCase(), code, Math.floor(Date.now() / 1000));
+    ).get(username.toLowerCase(), code.trim(), Math.floor(Date.now() / 1000));
 
     if (!user) return res.status(400).json({ error: 'Неверный или просроченный код' });
 
