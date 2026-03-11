@@ -7,6 +7,10 @@ const cron      = require('node-cron');
 
 const app = express();
 
+// ── Trust proxy (Railway / любой reverse proxy) ────────────────────────────────
+// Fixes: ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+app.set('trust proxy', 1);
+
 // ── Middleware ─────────────────────────────────────────────────────────────────
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',')
@@ -22,12 +26,12 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting
+// ── Rate limiting ──────────────────────────────────────────────────────────────
 app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false }));
-app.use('/api/auth/', rateLimit({ windowMs: 15 * 60 * 1000, max: 30 }));
-app.use('/api/wallet/deposit', rateLimit({ windowMs: 60 * 1000, max: 10 }));
+app.use('/api/auth/', rateLimit({ windowMs: 15 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false }));
+app.use('/api/wallet/deposit', rateLimit({ windowMs: 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false }));
 
-// ── Init DB first ──────────────────────────────────────────────────────────────
+// ── Init DB ────────────────────────────────────────────────────────────────────
 const db = require('./models/db');
 console.log('✅ SQLite database ready');
 
@@ -52,8 +56,13 @@ app.get('*', (req, res) => {
   }
 });
 
-// ── Telegram bot ───────────────────────────────────────────────────────────────
-require('./utils/bot').getBot();
+// ── Telegram bot (singleton — только один экземпляр) ──────────────────────────
+// Запускаем с задержкой чтобы старый инстанс Railway успел завершиться
+if (process.env.TELEGRAM_BOT_TOKEN) {
+  setTimeout(() => {
+    require('./utils/bot').getBot();
+  }, 3000);
+}
 
 // ── Cron: auto-complete deals after 72h ───────────────────────────────────────
 const { completeDeal } = require('./routes/deals');
@@ -96,9 +105,9 @@ cron.schedule('0 * * * *', () => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Minions Market server on port ${PORT}`);
-  if (!process.env.JWT_SECRET) console.warn('⚠️  JWT_SECRET not set — using dev fallback');
+  if (!process.env.JWT_SECRET)        console.warn('⚠️  JWT_SECRET not set — using dev fallback');
   if (!process.env.TELEGRAM_BOT_TOKEN) console.warn('⚠️  TELEGRAM_BOT_TOKEN not set — bot disabled');
-  if (!process.env.ADMIN_PASSWORD) console.warn('⚠️  ADMIN_PASSWORD not set — using default "changeme123"');
+  if (!process.env.ADMIN_PASSWORD)    console.warn('⚠️  ADMIN_PASSWORD not set — using default "changeme123"');
 });
 
 module.exports = app;
