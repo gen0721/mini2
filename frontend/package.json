@@ -16,7 +16,8 @@
     "three": "^0.158.0",
     "postprocessing": "^6.33.2",
     "ogl": "^1.0.9",
-    "motion": "^11.11.0"
+    "motion": "^11.11.0",
+    "lucide-react": "^0.383.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.0",
