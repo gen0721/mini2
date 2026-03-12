@@ -60,7 +60,7 @@ export default function ProfilePage() {
 
   if (error || !profile) return (
     <div style={{ textAlign:'center', padding:'80px 20px' }}>
-      <div style={{ fontSize:48, marginBottom:16 }}>👤</div>
+      <UserCircle size={48} strokeWidth={1} style={{marginBottom:16, opacity:0.35}}/>
       <div style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:24, marginBottom:16 }}>
         {error || 'Пользователь не найден'}
       </div>
@@ -133,7 +133,7 @@ export default function ProfilePage() {
           <div style={{ width:'100%', background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:16, padding:'16px 20px' }}>
             <div style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:11, color:'var(--t3)', letterSpacing:'0.12em', marginBottom:12 }}>СТАТИСТИКА</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12 }}>
-              {[['📦','Продаж',totalSales],['🛒','Покупок',totalPurch]].map(([icon,label,val]) => (
+              {[[<Package size={18} strokeWidth={1.5}/>, 'Продаж', totalSales],[<ShoppingCart size={18} strokeWidth={1.5}/>, 'Покупок', totalPurch]].map(([icon,label,val]) => (
                 <div key={label} style={{ background:'var(--bg3)', borderRadius:12, padding:'12px', textAlign:'center' }}>
                   <div style={{ fontSize:18 }}>{icon}</div>
                   <div style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:20 }}>{val}</div>
@@ -142,12 +142,12 @@ export default function ProfilePage() {
               ))}
             </div>
             <div style={{ fontSize:12, display:'flex', justifyContent:'space-between', paddingTop:10, borderTop:'1px solid var(--border)' }}>
-              <span style={{ color:'var(--t3)' }}>📅 На сайте с</span>
+              <span style={{ color:'var(--t3)', display:'flex', alignItems:'center', gap:4 }}><Calendar size={13} strokeWidth={1.75}/> На сайте с</span>
               <span style={{ fontWeight:600 }}>{joinDate.toLocaleDateString('ru', { month:'long', year:'numeric' })}</span>
             </div>
           </div>
 
-          {isMe && <Link to="/wallet" className="btn btn-primary btn-full">💰 Кошелёк</Link>}
+          {isMe && <Link to="/wallet" className="btn btn-primary btn-full"><Wallet size={15} style={{marginRight:6}}/> Кошелёк</Link>}
         </div>
 
         {/* Правая колонка */}
@@ -156,7 +156,7 @@ export default function ProfilePage() {
             <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:8 }}>
               <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:26, margin:0 }}>@{name}</h1>
               {!!profile.isVerified && <span className="badge badge-green">✓ Верифицирован</span>}
-              {!!profile.isAdmin    && <span className="badge badge-purple">⚡ Админ</span>}
+              {!!profile.isAdmin    && <span className="badge badge-purple"><Zap size={12} style={{marginRight:3}}/> Админ</span>}
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
               <span style={{ color:'var(--accent)', fontSize:14, letterSpacing:2 }}>
@@ -173,7 +173,7 @@ export default function ProfilePage() {
 
           {/* Табы */}
           <div style={{ display:'flex', gap:8, marginBottom:20 }}>
-            {[['products',`📦 Товары (${products.length})`],['reviews',`★ Отзывы (${reviews.length})`]].map(([v,l]) => (
+            {[['products',`Товары (${products.length})`],['reviews',`Отзывы (${reviews.length})`]].map(([v,l]) => (
               <button key={v} onClick={() => setTab(v)} style={{
                 padding:'10px 20px', borderRadius:10, border:'1px solid', cursor:'pointer',
                 fontSize:13, fontWeight:700, fontFamily:'var(--font-h)', transition:'all 0.15s',
@@ -187,7 +187,7 @@ export default function ProfilePage() {
           {tab === 'products' && (
             products.length === 0
               ? <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--t3)' }}>
-                  <div style={{ fontSize:40, marginBottom:12 }}>📦</div>
+                  <Package size={40} strokeWidth={0.75} style={{marginBottom:12, opacity:0.3}}/>
                   <div style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:18, marginBottom:16 }}>Товаров нет</div>
                   {isMe && <Link to="/sell" className="btn btn-primary">+ Выставить товар</Link>}
                 </div>
@@ -199,7 +199,7 @@ export default function ProfilePage() {
           {tab === 'reviews' && (
             reviews.length === 0
               ? <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--t3)' }}>
-                  <div style={{ fontSize:40, marginBottom:12 }}>★</div>
+                  <Star size={40} strokeWidth={0.75} style={{marginBottom:12, opacity:0.3}}/>
                   <div style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:18 }}>Отзывов пока нет</div>
                 </div>
               : <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
