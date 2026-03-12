@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import axios from 'axios'
 
 const BASE = import.meta.env.VITE_API_URL || ''
@@ -19,10 +20,19 @@ api.interceptors.response.use(r => r, err => {
   return Promise.reject(err)
 })
 
-export const useStore = create(set => ({
-  user: null,
-  setUser: user => set({ user }),
-  logout: () => { localStorage.removeItem('mn_token'); set({ user: null }) },
-  categories: [],
-  setCategories: cats => set({ categories: cats }),
-}))
+export const useStore = create(
+  persist(
+    set => ({
+      user: null,
+      setUser: user => set({ user }),
+      logout: () => { localStorage.removeItem('mn_token'); set({ user: null }) },
+      categories: [],
+      setCategories: cats => set({ categories: cats }),
+    }),
+    {
+      name: 'mn_store',
+      // Сохраняем только user, categories не нужны в localStorage
+      partialize: state => ({ user: state.user }),
+    }
+  )
+)
