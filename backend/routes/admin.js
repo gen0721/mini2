@@ -158,10 +158,22 @@ router.post('/products/:id/promote', async (req, res) => {
 
 router.post('/message', async (req, res) => {
   try {
-    const { userId, text } = req.body;
-    if (!userId || !text) return res.status(400).json({ error: 'Заполните поля' });
-    const user = await queryOne('SELECT telegram_id FROM users WHERE id = $1', [userId]);
-    if (!user?.telegram_id) return res.status(404).json({ error: 'Telegram не привязан' });
+    const { userId, username, text } = req.body;
+    if ((!userId && !username) || !text) return res.status(400).json({ error: 'Заполните поля' });
+    // Ищем по UUID, логину или TG ID
+    let user;
+    if (userId) {
+      user = await queryOne('SELECT telegram_id, username FROM users WHERE id = $1', [userId]);
+    }
+    if (!user && username) {
+      const q = username.replace(/^@/, '').trim();
+      user = await queryOne(
+        'SELECT telegram_id, username FROM users WHERE username = $1 OR telegram_id = $1',
+        [q]
+      );
+    }
+    if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+    if (!user.telegram_id) return res.status(404).json({ error: 'Telegram не привязан у этого пользователя' });
     await notify.sendTg(user.telegram_id, text);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: 'Ошибка' }); }
