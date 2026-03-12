@@ -1,7 +1,7 @@
 const router  = require('express').Router();
 const { queryOne, queryAll, run } = require('../models/db');
 const { auth } = require('../middleware/auth');
-const { sanitizeUser } = require('./routes_auth');
+const { sanitizeUser } = require('./auth');
 
 // ── GET /users/:id — Public profile ──────────────────────────────────────────
 router.get('/:id', async (req, res) => {
