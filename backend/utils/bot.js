@@ -222,6 +222,19 @@ async function handleUpdate(update) {
     }
     return;
   }
+
+  // Любой другой текст — AI отвечает как поддержка
+  try {
+    const { handleUserQuestion } = require('./aiAdmin');
+    await sendMessage(chatId, `⏳ Отвечаю...`);
+    const answer = await handleUserQuestion(chatId, text);
+    await sendMessage(chatId, `🤖 ${answer}`);
+  } catch (e) {
+    console.error('[Bot] AI answer error:', e.message);
+    await sendMessage(chatId,
+      `❓ Не понял вопрос.\n\nДоступные команды:\n• /code [логин]\n• /reset [логин]\n• /help`
+    );
+  }
 }
 
 // ── Публичный интерфейс ───────────────────────────────────────────────────────
