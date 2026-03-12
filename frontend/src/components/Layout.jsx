@@ -10,7 +10,7 @@ const IconDeals   = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="
 const IconProfile = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 
 export default function Layout({ children }) {
-  const { user, setUser, logout } = useStore()
+  const { user, setUser, logout, refreshUser } = useStore()
   const navigate  = useNavigate()
   const location  = useLocation()
   const [menuOpen,   setMenuOpen]   = useState(false)
@@ -20,11 +20,21 @@ export default function Layout({ children }) {
   useEffect(() => {
     const token = localStorage.getItem('mn_token')
     if (token && !user) {
-      api.get('/auth/me').then(r => setUser(r.data.user)).catch(() => localStorage.removeItem('mn_token'))
+      api.get('/auth/me').then(r => setUser(r.data.user || r.data)).catch(() => localStorage.removeItem('mn_token'))
+    } else if (token && user) {
+      // Обновляем баланс сразу при загрузке
+      refreshUser()
     }
     const onScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
+
+    // Обновляем баланс каждые 30 секунд
+    const interval = setInterval(() => { refreshUser() }, 30000)
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      clearInterval(interval)
+    }
   }, [])
 
   useEffect(() => {
