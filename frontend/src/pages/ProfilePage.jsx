@@ -3,8 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api, useStore } from '../store'
 import toast from 'react-hot-toast'
 import ProductCard from '../components/ProductCard'
-import RippleGrid from '../components/RippleGrid/RippleGrid'
 import ProfileCard from '../components/ProfileCard/ProfileCard'
+import Aurora from '../components/Aurora/Aurora'
 import { UserCircle, Package, ShoppingCart, Calendar, Wallet, Zap, Star } from '../components/Icon'
 
 class CardBoundary extends Component {
@@ -103,7 +103,19 @@ export default function ProfilePage() {
   )
 
   return (
-    <div style={{ maxWidth:1100, margin:'0 auto', padding:'32px 20px' }}>
+    <div style={{ position:'relative', minHeight:'100vh', overflow:'hidden' }}>
+      {/* Aurora фон */}
+      <div style={{ position:'fixed', inset:0, zIndex:0, pointerEvents:'none' }}>
+        <Aurora
+          colorStops={["#7cff67", "#B19EEF", "#5227FF"]}
+          blend={0.5}
+          amplitude={1.0}
+          speed={1}
+        />
+      </div>
+
+      {/* Контент поверх */}
+      <div style={{ position:'relative', zIndex:1, maxWidth:1100, margin:'0 auto', padding:'32px 20px' }}>
       <div style={{ display:'grid', gridTemplateColumns:'320px 1fr', gap:32, alignItems:'start' }}>
 
         {/* Левая колонка — ProfileCard */}
@@ -232,6 +244,7 @@ export default function ProfilePage() {
           .profile-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
+      </div>
     </div>
   )
 }
