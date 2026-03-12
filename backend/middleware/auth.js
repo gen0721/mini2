@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const db  = require('../models/db');
+const { queryOne } = require('../models/db');
 
 function getSecret() {
   const s = process.env.JWT_SECRET;
@@ -28,12 +28,12 @@ async function auth(req, res, next) {
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
     const { userId } = jwt.verify(token, getSecret());
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    const user = await queryOne('SELECT * FROM users WHERE id = $1', [userId]);
     if (!user) return res.status(401).json({ error: 'User not found' });
 
-    // Auto-unban if ban expired
-    if (user.is_banned && user.banned_until && user.banned_until < Math.floor(Date.now() / 1000)) {
-      db.prepare('UPDATE users SET is_banned = 0, banned_until = NULL WHERE id = ?').run(userId);
+    const now = Math.floor(Date.now() / 1000);
+    if (user.is_banned && user.banned_until && user.banned_until < now) {
+      await queryOne('UPDATE users SET is_banned = 0, banned_until = NULL WHERE id = $1', [userId]);
       user.is_banned = 0;
     }
 
@@ -45,9 +45,7 @@ async function auth(req, res, next) {
       });
     }
 
-    // Update last_active (non-blocking)
-    db.prepare('UPDATE users SET last_active = ? WHERE id = ?').run(Math.floor(Date.now() / 1000), userId);
-
+    await queryOne('UPDATE users SET last_active = $1 WHERE id = $2', [now, userId]);
     req.userId = userId;
     req.user   = user;
     next();
@@ -65,11 +63,10 @@ function adminAuth(req, res, next) {
   });
 }
 
-function adminPanelAuth(req, res, next) {
+async function adminPanelAuth(req, res, next) {
   const token = req.headers['x-admin-token'];
   if (!token) return res.status(401).json({ error: 'Admin token required' });
 
-  // Способ 1: главный admin-panel токен (логин/пароль из env)
   try {
     const payload = jwt.verify(token, getSecret() + '_admin');
     if (payload.role === 'admin') {
@@ -79,10 +76,9 @@ function adminPanelAuth(req, res, next) {
     }
   } catch {}
 
-  // Способ 2: обычный JWT суб-админа (is_sub_admin = 1 в БД)
   try {
     const { userId } = jwt.verify(token, getSecret());
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    const user = await queryOne('SELECT * FROM users WHERE id = $1', [userId]);
     if (user && (user.is_admin || user.is_sub_admin)) {
       req.adminId = userId;
       req.isSuperAdmin = !!user.is_admin;
