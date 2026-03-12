@@ -37,10 +37,6 @@ export default function WalletPage() {
       .finally(() => setLoading(false))
   }, [user])
 
-  const refreshUser = async () => {
-    try { const { data } = await api.get('/auth/me'); setUser(data.user) } catch {}
-  }
-
   const deposit = async () => {
     const amt = parseFloat(amount)
     if (!amt || amt < 1) return toast.error('Минимум $1')
