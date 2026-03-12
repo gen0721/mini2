@@ -110,7 +110,7 @@ async function handleUpdate(update) {
       );
 
       if (existing?.password) {
-        await sendMessage(chatId, `❌ Логин <b>${username}</b> уже занят.\n\nВыберите другой логин.`);
+        await sendMessage(chatId, `❌ Логин <b>${username}</b> уже занят. Выберите другой логин.`);
         return;
       }
 
@@ -131,9 +131,9 @@ async function handleUpdate(update) {
         );
         if (tgExists) {
           await sendMessage(chatId,
-            `❌ Этот Telegram уже привязан к аккаунту <b>@${tgExists.username}</b>.\n\n` +
+            `❌ Этот Telegram уже привязан к аккаунту <b>${tgExists.username}</b>.\n\n` +
             `Один Telegram — один аккаунт.\n` +
-            `Для входа используйте логин <b>${tgExists.username}</b>.`
+            `Для входа используйте логин: <code>${tgExists.username}</code>`
           );
           return;
         }
