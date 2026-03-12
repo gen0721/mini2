@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Gamepad2, Coins, Sword, Palette, KeyRound, Star, Rocket, Package, Search } from '../components/Icon'
+import DarkVeil from '../components/DarkVeil/DarkVeil'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../store'
 import ProductCard from '../components/ProductCard'
@@ -61,7 +62,21 @@ export default function CatalogPage() {
   }
 
   return (
-    <div style={{ maxWidth:1200, margin:'0 auto', padding:'32px 20px' }}>
+    <div style={{ position:'relative', minHeight:'100vh', overflow:'hidden' }}>
+      {/* DarkVeil фон */}
+      <div style={{ position:'fixed', inset:0, zIndex:0, pointerEvents:'none' }}>
+        <DarkVeil
+          hueShift={0}
+          noiseIntensity={0}
+          scanlineIntensity={0}
+          speed={2}
+          scanlineFrequency={0}
+          warpAmount={0}
+        />
+      </div>
+
+      {/* Контент поверх */}
+      <div style={{ position:'relative', zIndex:1, maxWidth:1200, margin:'0 auto', padding:'32px 20px' }}>
       <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:32, marginBottom:24 }}>Каталог</h1>
 
       <div style={{ display:'flex', gap:10, marginBottom:24 }}>
@@ -118,7 +133,7 @@ export default function CatalogPage() {
             </div>
           )}
         </>
-      )}
+      )}</div>
     </div>
   )
-    }
+}
