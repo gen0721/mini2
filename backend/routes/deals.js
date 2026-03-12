@@ -199,9 +199,8 @@ router.post('/:id/refund', auth, async (req, res) => {
   try {
     const deal = await queryOne('SELECT * FROM deals WHERE id = $1', [req.params.id]);
     if (!deal)                         return res.status(404).json({ error: 'Не найдена' });
-    if (deal.buyer_id !== req.userId)  return res.status(403).json({ error: 'Нет доступа' });
-    if (deal.status !== 'active')      return res.status(400).json({ error: 'Нельзя запросить возврат' });
-    if (deal.delivered_at)             return res.status(400).json({ error: 'Товар уже передан. Откройте спор.' });
+    if (deal.seller_id !== req.userId)  return res.status(403).json({ error: 'Только продавец может вернуть деньги' });
+    if (deal.status !== 'active')       return res.status(400).json({ error: 'Нельзя выполнить возврат' });
 
     const { reason } = req.body;
     await transaction(async (client) => {
@@ -220,8 +219,8 @@ router.post('/:id/refund', auth, async (req, res) => {
       await client.query(`
         INSERT INTO transactions (id, user_id, type, amount, status, description, deal_id)
         VALUES ($1,$2,'refund',$3,'completed',$4,$5)
-      `, [crypto.randomUUID(), deal.buyer_id, deal.amount, `Возврат: ${reason||'отмена покупателем'}`, deal.id]);
-      await addSystemMessage(client, deal.id, `↩ Покупатель запросил возврат. Деньги возвращены.`);
+      `, [crypto.randomUUID(), deal.buyer_id, deal.amount, `Возврат: ${reason||'возврат от продавца'}`, deal.id]);
+      await addSystemMessage(client, deal.id, `↩ Продавец вернул деньги покупателю.`);
     });
 
     const [buyer, seller, product] = await Promise.all([
