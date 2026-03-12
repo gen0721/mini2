@@ -61,6 +61,7 @@ app.get('*', (req, res) => {
 const { completeDeal } = require('./routes/deals');
 const { queryAll, run } = require('./models/db');
 
+// Авто-завершение сделок каждые 15 минут
 cron.schedule('*/15 * * * *', async () => {
   try {
     const now     = Math.floor(Date.now() / 1000);
@@ -76,6 +77,7 @@ cron.schedule('*/15 * * * *', async () => {
   } catch (e) { console.error('[Cron] Error:', e.message); }
 });
 
+// Снятие банов и продвижений каждый час
 cron.schedule('0 * * * *', async () => {
   try {
     const now = Math.floor(Date.now() / 1000);
@@ -83,6 +85,24 @@ cron.schedule('0 * * * *', async () => {
     await run(`UPDATE products SET is_promoted = 0, promoted_until = NULL WHERE is_promoted = 1 AND promoted_until IS NOT NULL AND promoted_until <= $1`, [now]);
   } catch (e) { console.error('[Cron] Error:', e.message); }
 });
+
+// ── Hourly AI Report → Telegram ───────────────────────────────────────────────
+// Требует: ANTHROPIC_API_KEY и REPORT_CHAT_ID в переменных окружения
+require('./utils/hourlyReport');
+
+// ── Тестовый роут для мгновенной отправки отчёта ─────────────────────────────
+// Убери этот блок после проверки!
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/api/test-report', async (req, res) => {
+    try {
+      const { sendHourlyReport } = require('./utils/hourlyReport');
+      await sendHourlyReport();
+      res.json({ ok: true, message: 'Отчёт отправлен в Telegram' });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e.message });
+    }
+  });
+}
 
 // ── Init DB then start ────────────────────────────────────────────────────────
 const { initSchema } = require('./models/db');
@@ -94,6 +114,8 @@ initSchema().then(() => {
     if (!process.env.JWT_SECRET)          console.warn('⚠️  JWT_SECRET not set');
     if (!process.env.TELEGRAM_BOT_TOKEN)  console.warn('⚠️  TELEGRAM_BOT_TOKEN not set');
     if (!process.env.ADMIN_PASSWORD)      console.warn('⚠️  ADMIN_PASSWORD not set');
+    if (!process.env.ANTHROPIC_API_KEY)   console.warn('⚠️  ANTHROPIC_API_KEY not set (hourly report disabled)');
+    if (!process.env.REPORT_CHAT_ID)      console.warn('⚠️  REPORT_CHAT_ID not set (hourly report disabled)');
   });
 }).catch(e => {
   console.error('❌ DB init failed:', e.message);
