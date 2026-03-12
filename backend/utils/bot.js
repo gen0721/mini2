@@ -75,6 +75,7 @@ async function handleUpdate(update) {
       `Команды:\n` +
       `• /code [логин] — получить код для входа/регистрации\n` +
       `• /reset [логин] — сбросить пароль\n` +
+      `• /report — отчёт прямо сейчас (только для админа)\n` +
       `• /help — помощь`
     );
     return;
@@ -85,7 +86,8 @@ async function handleUpdate(update) {
     await sendMessage(chatId,
       `🟡 <b>Minions Market — Помощь</b>\n\n` +
       `/code [логин] — код для регистрации\n` +
-      `/reset [логин] — сброс пароля\n\n` +
+      `/reset [логин] — сброс пароля\n` +
+      `/report — отчёт прямо сейчас (только для админа)\n\n` +
       `По вопросам: @givi_hu`
     );
     return;
@@ -154,6 +156,24 @@ async function handleUpdate(update) {
     } catch (e) {
       console.error('[Bot] /code db error:', e.message);
       await sendMessage(chatId, `❌ Ошибка генерации кода. Попробуйте ещё раз.`);
+    }
+    return;
+  }
+
+  // /report — только для админа
+  if (text === '/report') {
+    const adminChatId = process.env.REPORT_CHAT_ID;
+    if (!adminChatId || String(chatId) !== String(adminChatId)) {
+      await sendMessage(chatId, `⛔ У вас нет доступа к этой команде.`);
+      return;
+    }
+    await sendMessage(chatId, `⏳ <b>Генерирую отчёт...</b>\n\nЭто займёт несколько секунд.`);
+    try {
+      const { sendHourlyReport } = require('./hourlyReport');
+      await sendHourlyReport();
+    } catch (e) {
+      console.error('[Bot] /report error:', e.message);
+      await sendMessage(chatId, `❌ Ошибка генерации отчёта: <code>${e.message}</code>`);
     }
     return;
   }
