@@ -32,7 +32,7 @@ class TabBoundary extends Component {
   render() {
     if (this.state.error) return (
       <div style={{ padding:24, background:'rgba(231,76,60,0.08)', border:'1px solid rgba(231,76,60,0.3)', borderRadius:12 }}>
-        <div style={{ color:'var(--red)', fontWeight:700, marginBottom:8 }}>💥 Ошибка рендера</div>
+        <div style={{ color:'var(--red)', fontWeight:700, marginBottom:8 }}> Ошибка рендера</div>
         <div style={{ fontSize:12, color:'var(--t3)' }}>{this.state.error?.message}</div>
         <button className="btn btn-sm btn-secondary" style={{ marginTop:12 }} onClick={() => this.setState({ error: null })}>Попробовать снова</button>
       </div>
@@ -151,7 +151,7 @@ export default function AdminPage() {
     const reason = window.prompt('Причина:') || 'Admin adjustment'
     const res = await adminApi.post(`/users/${id}/balance`, { amount: parsed, reason })
     if (res.ok) {
-      toast.success(`✅ Новый баланс: $${safe(res.newBalance).toFixed(2)}`)
+      toast.success(`✓ Новый баланс: $${safe(res.newBalance).toFixed(2)}`)
       loadTab('users')
     } else {
       toast.error(res.error || 'Ошибка изменения баланса')
@@ -244,7 +244,7 @@ export default function AdminPage() {
                 </div>
                 {Array.isArray(stats.monthlyRevenue) && stats.monthlyRevenue.length > 0 && (
                   <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:16, padding:20, marginBottom:28 }}>
-                    <div style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:15, marginBottom:12 }}>📈 Доход по месяцам</div>
+                    <div style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:15, marginBottom:12 }}> Доход по месяцам</div>
                     <MiniChart data={stats.monthlyRevenue}/>
                   </div>
                 )}
@@ -292,23 +292,23 @@ export default function AdminPage() {
                             @{u.username||'—'}
                             {u.isAdmin    && <span style={{ color:'var(--accent)', marginLeft:6 }}>⚡</span>}
                             {u.isVerified && <span style={{ color:'var(--green)', marginLeft:6 }}>✓</span>}
-                            {u.isBanned   && <span style={{ color:'var(--red)', marginLeft:6 }}>🚫</span>}
+                            {u.isBanned   && <span style={{ color:'var(--red)', marginLeft:6 }}>x</span>}
                           </div>
                           <div style={{ fontSize:12, color:'var(--t3)' }}>
                             Баланс: ${safe(u.balance).toFixed(2)} · Рейт: {safe(u.rating, 5).toFixed(1)} · TG: {u.telegram_id||'—'} · IP: {u.last_ip||'—'}
                           </div>
                         </div>
                         <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                          <button className="btn btn-sm btn-secondary" onClick={() => adjustBalance(uid)} title="Изменить баланс">💰</button>
+                          <button className="btn btn-sm btn-secondary" onClick={() => adjustBalance(uid)} title="Изменить баланс"></button>
                           {!u.isVerified && <button className="btn btn-sm btn-secondary" onClick={() => verifyUser(uid)} title="Верифицировать">✓</button>}
                           <button className="btn btn-sm btn-secondary" onClick={() => makeSubAdmin(uid, u.isSubAdmin)}
                             title={u.isSubAdmin ? 'Снять права' : 'Назначить помощником'}
                             style={{ color: u.isSubAdmin ? 'var(--accent)' : 'var(--t3)' }}>⚡</button>
                           {u.isBanned
-                            ? <button className="btn btn-sm btn-secondary" onClick={() => unbanUser(uid)} title="Разблокировать">✅</button>
-                            : <button className="btn btn-sm btn-danger" onClick={() => banUser(uid)} title="Заблокировать">🚫</button>
+                            ? <button className="btn btn-sm btn-secondary" onClick={() => unbanUser(uid)} title="Разблокировать">✓</button>
+                            : <button className="btn btn-sm btn-danger" onClick={() => banUser(uid)} title="Заблокировать">x</button>
                           }
-                          <button className="btn btn-sm btn-ghost" onClick={() => { setMsgUserId(uid); setTab('messages') }} title="Отправить сообщение">💬</button>
+                          <button className="btn btn-sm btn-ghost" onClick={() => { setMsgUserId(uid); setTab('messages') }} title="Отправить сообщение"></button>
                         </div>
                       </div>
                     )
@@ -323,7 +323,7 @@ export default function AdminPage() {
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {deals.filter(d => d.status==='disputed').length > 0 && (
               <div style={{ background:'rgba(231,76,60,0.06)', border:'1px solid rgba(231,76,60,0.3)', borderRadius:12, padding:'10px 16px', marginBottom:8, fontSize:13, color:'var(--red)', fontWeight:700 }}>
-                ⚠️ {deals.filter(d => d.status==='disputed').length} спора требуют рассмотрения
+                !️ {deals.filter(d => d.status==='disputed').length} спора требуют рассмотрения
               </div>
             )}
             {deals.length === 0
@@ -347,7 +347,7 @@ export default function AdminPage() {
                       </div>
                       {d.status==='disputed' && (
                         <div style={{ display:'flex', gap:8, marginTop:10 }}>
-                          <button className="btn btn-sm btn-primary" onClick={() => resolveDispute(did,'complete')}>✅ Продавцу</button>
+                          <button className="btn btn-sm btn-primary" onClick={() => resolveDispute(did,'complete')}>✓ Продавцу</button>
                           <button className="btn btn-sm btn-danger" onClick={() => resolveDispute(did,'refund')}>↩ Покупателю</button>
                         </div>
                       )}
@@ -372,7 +372,7 @@ export default function AdminPage() {
                         <div style={{ fontSize:12, color:'var(--t3)' }}>@{p.seller?.username||'?'} · ${safe(p.price).toFixed(2)} · {p.category||'—'}</div>
                       </div>
                       <span style={{ fontSize:11, fontWeight:700, color: p.status==='active' ? 'var(--green)' : 'var(--t3)' }}>{p.status}</span>
-                      <button className="btn btn-sm btn-danger" onClick={() => deleteProduct(pid)}>🗑</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => deleteProduct(pid)}></button>
                     </div>
                   )
                 })
@@ -431,7 +431,7 @@ export default function AdminPage() {
                         display:'flex', alignItems:'center', gap:12
                       }}>
                         <div style={{ fontSize:16 }}>
-                          {l.event==='login_ok'?'✅':l.event==='login_fail'?'❌':l.event==='admin_login_ok'?'⚡':l.event==='admin_login_fail'?'🚨':l.event==='register'?'🆕':l.event==='banned_access'?'🚫':'🔍'}
+                          {l.event==='login_ok'?'✓':l.event==='login_fail'?'✗':l.event==='admin_login_ok'?'⚡':l.event==='admin_login_fail'?'!':l.event==='register'?'+':l.event==='banned_access'?'×':'?'}
                         </div>
                         <div style={{ flex:1 }}>
                           <div style={{ fontSize:13, fontWeight:600, color: isAlert ? 'var(--red)' : 'var(--t1)' }}>
@@ -469,7 +469,7 @@ export default function AdminPage() {
                 if (!msgUserId || !msgText) return toast.error('Заполните поля')
                 const res = await adminApi.post('/message', { userId: msgUserId, text: msgText })
                 res.ok ? (toast.success('Отправлено!'), setMsgText(''), setMsgUserId('')) : toast.error(res.error || 'Ошибка')
-              }}>📤 Отправить в Telegram</button>
+              }}>Отправить в Telegram</button>
             </div>
           </div>
         )}
