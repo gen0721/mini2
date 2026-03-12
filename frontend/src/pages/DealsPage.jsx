@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { CheckCircle, AlertTriangle, RotateCcw, Package, Send, ArrowLeft } from '../components/Icon'
+import Particles from '../components/Particles/Particles'
 import { useNavigate } from 'react-router-dom'
 import { api, useStore } from '../store'
 import toast from 'react-hot-toast'
@@ -318,7 +319,24 @@ export default function DealsPage() {
   )
 
   return (
-    <div style={{ maxWidth:1100, margin:'0 auto', padding: isMobile ? '16px 12px' : '32px 20px' }}>
+    <div style={{ position:'relative', minHeight:'100vh', overflow:'hidden' }}>
+      {/* Particles фон */}
+      <div style={{ position:'fixed', inset:0, zIndex:0, pointerEvents:'none' }}>
+        <Particles
+          particleColors={['#ffffff']}
+          particleCount={200}
+          particleSpread={10}
+          speed={0.1}
+          particleBaseSize={100}
+          moveParticlesOnHover={false}
+          alphaParticles={false}
+          disableRotation={false}
+          pixelRatio={1}
+        />
+      </div>
+
+      {/* Контент поверх */}
+      <div style={{ position:'relative', zIndex:1, maxWidth:1100, margin:'0 auto', padding: isMobile ? '16px 12px' : '32px 20px' }}>
 
       {/* Заголовок — скрываем на мобильном когда открыта сделка */}
       {!(isMobile && selected) && (
@@ -392,6 +410,7 @@ export default function DealsPage() {
           <DetailPanel/>
         </div>
       )}
+      </div>
     </div>
   )
 }
