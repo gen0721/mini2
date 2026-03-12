@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { CheckCircle, AlertTriangle, RotateCcw, Package, Send, ArrowLeft } from '../components/Icon'
 import { useNavigate } from 'react-router-dom'
 import { api, useStore } from '../store'
 import toast from 'react-hot-toast'
@@ -261,7 +262,7 @@ export default function DealsPage() {
                     <textarea className="inp" rows={3} placeholder="Логин/пароль, ключ активации, ссылка..." value={delivery}
                       onChange={e => setDelivery(e.target.value)} style={{ resize:'none', marginBottom:8, fontSize:13 }}/>
                     <button className="btn btn-primary btn-full" onClick={deliver} disabled={working}>
-                      {working ? '...' : '📦 Передать товар покупателю'}
+                      {working ? '...' : 'Передать товар покупателю'}
                     </button>
                   </div>
                 )}
