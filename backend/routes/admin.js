@@ -81,9 +81,9 @@ router.post('/users/:id/balance', async (req, res) => {
       await client.query(`INSERT INTO transactions (id, user_id, type, amount, status, description, balance_before, balance_after) VALUES ($1,$2,'adjustment',$3,'completed',$4,$5,$6)`,
         [crypto.randomUUID(), req.params.id, Math.abs(amt), reason || 'Admin adjustment', user.balance, newBal]);
     });
-    notify.notifyBalanceAdjust(user, amt, reason).catch(() => {});
+    if (notify.notifyBalanceAdjust) notify.notifyBalanceAdjust(user, amt, reason).catch(() => {});
     res.json({ ok: true, newBalance: newBal });
-  } catch (e) { res.status(500).json({ error: 'Ошибка' }); }
+  } catch (e) { console.error('Balance adjust error:', e); res.status(500).json({ error: e.message || 'Ошибка' }); }
 });
 
 router.get('/deals', async (req, res) => {
