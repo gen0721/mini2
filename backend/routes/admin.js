@@ -72,12 +72,15 @@ router.post('/users/:id/balance', async (req, res) => {
     const { amount, reason } = req.body;
     const amt = parseFloat(amount);
     if (isNaN(amt)) return res.status(400).json({ error: 'Неверная сумма' });
-    const user = await queryOne('SELECT * FROM users WHERE id = $1', [req.params.id]);
+    const user = await queryOne('SELECT id, balance FROM users WHERE id = $1', [req.params.id]);
     if (!user) return res.status(404).json({ error: 'Не найден' });
-    const newBal = parseFloat(user.balance) + amt;
+    const currentBal = parseFloat(String(user.balance)) || 0;
+    const newBal = Math.round((currentBal + amt) * 100) / 100;
+    console.log(`Balance adjust: user=${req.params.id} current=${currentBal} amt=${amt} new=${newBal}`);
     if (newBal < 0) return res.status(400).json({ error: 'Баланс не может быть отрицательным' });
     await transaction(async (client) => {
-      await client.query(`UPDATE users SET balance = $1 WHERE id = $2`, [newBal, req.params.id]);
+      const result = await client.query(`UPDATE users SET balance = $1::numeric WHERE id = $2 RETURNING balance`, [newBal, req.params.id]);
+      console.log('UPDATE result:', result.rows[0]);
       await client.query(`INSERT INTO transactions (id, user_id, type, amount, status, description, balance_before, balance_after) VALUES ($1,$2,'adjustment',$3,'completed',$4,$5,$6)`,
         [crypto.randomUUID(), req.params.id, Math.abs(amt), reason || 'Admin adjustment', user.balance, newBal]);
     });
