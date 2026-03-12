@@ -25,7 +25,7 @@ app.use('/api/auth/', rateLimit({ windowMs: 15 * 60 * 1000, max: 30 }));
 app.use('/api/wallet/deposit', rateLimit({ windowMs: 60 * 1000, max: 10 }));
 
 // ── Routes ─────────────────────────────────────────────────────────────────────
-app.use('/api/auth',       require('./routes/routes_auth'));
+app.use('/api/auth',       require('./routes/auth'));
 app.use('/api/products',   require('./routes/products'));
 app.use('/api/deals',      require('./routes/deals'));
 app.use('/api/wallet',     require('./routes/wallet'));
