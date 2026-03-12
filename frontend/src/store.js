@@ -22,20 +22,29 @@ api.interceptors.response.use(r => r, err => {
 
 export const useStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
-      hydrated: false,          // ← флаг: store загружен из localStorage
+      hydrated: false,
       setUser: user => set({ user }),
       setHydrated: () => set({ hydrated: true }),
       logout: () => { localStorage.removeItem('mn_token'); set({ user: null }) },
       categories: [],
       setCategories: cats => set({ categories: cats }),
+
+      // Подтягивает свежие данные юзера с сервера (баланс, рейтинг и т.д.)
+      refreshUser: async () => {
+        const token = localStorage.getItem('mn_token')
+        if (!token || !get().user) return
+        try {
+          const { data } = await api.get('/auth/me')
+          if (data) set({ user: data })
+        } catch { /* тихо игнорируем */ }
+      },
     }),
     {
       name: 'mn_store',
       partialize: state => ({ user: state.user }),
       onRehydrateStorage: () => (state) => {
-        // вызывается когда persist закончил загрузку из localStorage
         state?.setHydrated()
       },
     }
