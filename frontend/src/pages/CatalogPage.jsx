@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { Gamepad2, Coins, Sword, Palette, KeyRound, Star, Rocket, Package, Search } from '../components/Icon'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../store'
 import ProductCard from '../components/ProductCard'
 
 const CATEGORIES = [
   { slug:'', name:'Все' },
-  { slug:'game-accounts', name:'Аккаунты', icon:'🎮' },
-  { slug:'game-currency', name:'Валюта', icon:'💰' },
-  { slug:'items', name:'Предметы', icon:'⚔️' },
-  { slug:'skins', name:'Скины', icon:'🎨' },
-  { slug:'keys', name:'Ключи', icon:'🔑' },
-  { slug:'subscriptions', name:'Подписки', icon:'⭐' },
-  { slug:'boost', name:'Буст', icon:'🚀' },
-  { slug:'other', name:'Прочее', icon:'📦' },
+  { slug:'game-accounts', name:'Аккаунты', icon: <Gamepad2 size={18} strokeWidth={1.5}/> },
+  { slug:'game-currency', name:'Валюта', icon: <Coins size={18} strokeWidth={1.5}/> },
+  { slug:'items', name:'Предметы', icon: <Sword size={18} strokeWidth={1.5}/> },
+  { slug:'skins', name:'Скины', icon: <Palette size={18} strokeWidth={1.5}/> },
+  { slug:'keys', name:'Ключи', icon: <KeyRound size={18} strokeWidth={1.5}/> },
+  { slug:'subscriptions', name:'Подписки', icon: <Star size={18} strokeWidth={1.5}/> },
+  { slug:'boost', name:'Буст', icon: <Rocket size={18} strokeWidth={1.5}/> },
+  { slug:'other', name:'Прочее', icon: <Package size={18} strokeWidth={1.5}/> },
 ]
 const SORTS = [{ v:'newest',label:'Новые' },{ v:'price_asc',label:'Дешевле' },{ v:'price_desc',label:'Дороже' },{ v:'popular',label:'Популярные' }]
 
@@ -64,7 +65,7 @@ export default function CatalogPage() {
       <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:32, marginBottom:24 }}>Каталог</h1>
 
       <div style={{ display:'flex', gap:10, marginBottom:24 }}>
-        <input className="inp" placeholder="🔍 Поиск товаров..." value={searchInput}
+        <input className="inp" placeholder="Поиск товаров..." value={searchInput}
           onChange={e => setSearchInput(e.target.value)} onKeyDown={e => e.key==='Enter' && applySearch()} style={{ flex:1 }}/>
         <input className="inp" placeholder="$ от" value={minP} onChange={e => setMinP(e.target.value)} style={{ width:90 }}/>
         <input className="inp" placeholder="$ до" value={maxP} onChange={e => setMaxP(e.target.value)} style={{ width:90 }}/>
@@ -100,7 +101,7 @@ export default function CatalogPage() {
         <div className="grid-4">{Array(8).fill(0).map((_,i) => <div key={i} className="skel" style={{ height:280 }}/>)}</div>
       ) : products.length===0 ? (
         <div style={{ textAlign:'center', padding:'80px 20px', color:'var(--t3)' }}>
-          <div style={{ fontSize:48, marginBottom:16 }}>🔍</div>
+          <Search size={48} strokeWidth={1} style={{marginBottom:16, opacity:0.35}}/>
           <div style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:20 }}>Товары не найдены</div>
           <p style={{ color:'var(--t4)', marginTop:8 }}>Попробуйте изменить фильтры</p>
         </div>
