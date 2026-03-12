@@ -116,7 +116,7 @@ export default function ProfilePage() {
 
       {/* Контент поверх */}
       <div style={{ position:'relative', zIndex:1, maxWidth:1100, margin:'0 auto', padding:'32px 20px' }}>
-      <div style={{ display:'grid', gridTemplateColumns:'320px 1fr', gap:32, alignItems:'start' }}>
+      <div className="profile-grid">
 
         {/* Левая колонка — ProfileCard */}
         <div style={{ display:'flex', flexDirection:'column', gap:16, alignItems:'center' }}>
@@ -204,7 +204,7 @@ export default function ProfilePage() {
                   <div style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:18, marginBottom:16 }}>Товаров нет</div>
                   {isMe && <Link to="/sell" className="btn btn-primary">+ Выставить товар</Link>}
                 </div>
-              : <div className="grid-3" style={{ gap:16 }}>
+              : <div className="profile-products-grid">
                   {products.map(p => <ProductCard key={p.id||p._id} product={p}/>)}
                 </div>
           )}
@@ -240,8 +240,41 @@ export default function ProfilePage() {
       </div>
 
       <style>{`
-        @media (max-width: 900px) {
-          .profile-grid { grid-template-columns: 1fr !important; }
+        .profile-grid {
+          display: grid;
+          grid-template-columns: 320px 1fr;
+          gap: 32px;
+          align-items: start;
+        }
+        @media (max-width: 860px) {
+          .profile-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .profile-grid > div:first-child {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+          }
+        }
+        @media (max-width: 480px) {
+          .profile-grid > div:first-child {
+            max-width: 100%;
+          }
+        }
+        .profile-products-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+        @media (max-width: 860px) {
+          .profile-products-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (max-width: 480px) {
+          .profile-products-grid {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
       </div>
