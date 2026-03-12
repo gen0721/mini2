@@ -32,7 +32,7 @@ router.post('/deposit/rukassa', auth, async (req, res) => {
     const hookUrl   = `${process.env.BACKEND_URL || ''}/api/wallet/webhook/rukassa`;
     const successUrl = `${process.env.FRONTEND_URL || ''}/wallet?success=1`;
 
-    const result = await rukassa.createInvoice({ amount, orderId, hookUrl, successUrl });
+    const result = await rukassa.createInvoice({ amount, orderId, hookUrl, successUrl, comment: `Пополнение баланса Minions Market на $${amount}` });
     if (!result.ok) return res.status(502).json({ error: result.error });
 
     const user = await queryOne('SELECT balance FROM users WHERE id = $1', [req.userId]);
