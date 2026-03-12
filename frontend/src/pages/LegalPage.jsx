@@ -1,10 +1,11 @@
 import React from 'react'
+import { FileText, Lock, RotateCcw, Mail } from '../components/Icon'
 import { useParams, Link, Navigate } from 'react-router-dom'
 
 const PAGES = {
   rules: {
     title: 'Правила платформы',
-    icon: '📋',
+    icon: <FileText size={26} strokeWidth={1.5}/>,
     lastUpdated: '01.01.2025',
     sections: [
       {
@@ -52,7 +53,7 @@ const PAGES = {
 
   privacy: {
     title: 'Политика конфиденциальности',
-    icon: '🔒',
+    icon: <Lock size={26} strokeWidth={1.5}/>,
     lastUpdated: '01.01.2025',
     sections: [
       {
@@ -96,7 +97,7 @@ const PAGES = {
 
   refund: {
     title: 'Условия возврата',
-    icon: '↩',
+    icon: <RotateCcw size={26} strokeWidth={1.5}/>,
     lastUpdated: '12.03.2026',
     sections: [
       {
@@ -164,7 +165,7 @@ const PAGES = {
   },
   contacts: {
     title: 'Контакты',
-    icon: '📬',
+    icon: <Mail size={26} strokeWidth={1.5}/>,
     lastUpdated: null,
     isContacts: true,
     contacts: [
