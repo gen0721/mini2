@@ -4,7 +4,7 @@ const { queryOne, queryAll, run, transaction } = require('../models/db');
 const { adminPanelAuth, generateAdminToken } = require('../middleware/auth');
 const notify   = require('../utils/notify');
 const { completeDeal } = require('./deals');
-const { sanitizeUser } = require('./routes_auth');
+const { sanitizeUser } = require('./auth');
 
 router.post('/login', async (req, res) => {
   const { login, password } = req.body;
