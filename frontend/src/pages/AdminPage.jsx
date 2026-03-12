@@ -48,16 +48,16 @@ export default function AdminPage() {
         setStats(res)
       } else if (t === 'users') {
         const res = await adminApi.get(`/users?search=${encodeURIComponent(userSearch)}`)
-        setUsers(res.users || [])
+        setUsers(Array.isArray(res) ? res : res.users || [])
       } else if (t === 'deals') {
         const res = await adminApi.get('/deals')
-        setDeals(res.deals || [])
+        setDeals(Array.isArray(res) ? res : res.deals || [])
       } else if (t === 'products') {
         const res = await adminApi.get('/products')
-        setProducts(res.products || [])
+        setProducts(Array.isArray(res) ? res : res.products || [])
       } else if (t === 'transactions') {
         const res = await adminApi.get('/transactions')
-        setTransactions(res.transactions || [])
+        setTransactions(Array.isArray(res) ? res : res.transactions || [])
       }
     } catch { toast.error('Ошибка загрузки') }
     setLoading(false)
