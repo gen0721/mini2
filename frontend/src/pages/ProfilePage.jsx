@@ -15,7 +15,7 @@ const StarRating = ({ value }) => (
 
 export default function ProfilePage() {
   const { id } = useParams()
-  const { user: me } = useStore()
+  const { user: me, hydrated } = useStore()
   const navigate = useNavigate()
   const [profile, setProfile]   = useState(null)
   const [products, setProducts] = useState([])
@@ -24,7 +24,8 @@ export default function ProfilePage() {
   const [tab, setTab]           = useState('products')
 
   useEffect(() => {
-    if (!id && me === undefined) return
+    // Ждём пока store загрузится из localStorage
+    if (!hydrated) return
     const targetId = id || me?._id || me?.id
     if (!targetId) { navigate('/auth'); return }
 
@@ -39,7 +40,7 @@ export default function ProfilePage() {
       .finally(() => setLoading(false))
   }, [id, me])
 
-  if (!id && me === undefined) return (
+  if (!id && !hydrated) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh' }}>
       <div style={{ width:32, height:32, border:'3px solid var(--border)', borderTopColor:'var(--accent)', borderRadius:'50%', animation:'spin 0.7s linear infinite' }}/>
     </div>
