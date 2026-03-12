@@ -1,21 +1,24 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Component } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api, useStore } from '../store'
 import toast from 'react-hot-toast'
 import ProductCard from '../components/ProductCard'
 import ProfileCard from '../components/ProfileCard/ProfileCard'
 
+class ErrorBoundary extends Component {
+  state = { error: false }
+  static getDerivedStateFromError() { return { error: true } }
+  render() {
+    if (this.state.error) return this.props.fallback
+    return this.props.children
+  }
+}
+
 const StarRating = ({ value }) => (
   <div style={{ display:'flex', gap:4 }}>
     {[1,2,3,4,5].map(s => (
       <span key={s} style={{ fontSize:16, color: s <= value ? 'var(--accent)' : 'var(--bg4)' }}>★</span>
     ))}
-  </div>
-)
-
-const Loader = () => (
-  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh' }}>
-    <div style={{ width:32, height:32, border:'3px solid var(--border)', borderTopColor:'var(--accent)', borderRadius:'50%', animation:'spin 0.7s linear infinite' }}/>
   </div>
 )
 
@@ -30,14 +33,9 @@ export default function ProfilePage() {
   const [tab, setTab]           = useState('products')
 
   useEffect(() => {
-    if (!hydrated) return  // ждём загрузки store
-
+    if (!hydrated) return
     const targetId = id || me?._id || me?.id
-    if (!targetId) {
-      navigate('/auth')
-      return
-    }
-
+    if (!targetId) { navigate('/auth'); return }
     setLoading(true)
     api.get(`/users/${targetId}`)
       .then(r => {
@@ -47,7 +45,7 @@ export default function ProfilePage() {
       })
       .catch(() => toast.error('Пользователь не найден'))
       .finally(() => setLoading(false))
-  }, [id, me, hydrated])  // ← добавили hydrated в deps
+  }, [id, me, hydrated])
 
   if (!hydrated || loading) return (
     <div style={{ maxWidth:1100, margin:'0 auto', padding:'40px 20px' }}>
@@ -71,10 +69,26 @@ export default function ProfilePage() {
   const isMe = !id || id === me?._id || id === me?.id
   const joinDate = new Date((profile.created_at || 0) * 1000)
   const displayName = profile.username || profile.firstName || 'Пользователь'
+  const glowColor = (profile.rating >= 4.5) ? 'rgba(245,200,66,0.5)' : 'rgba(124,106,255,0.5)'
 
-  const glowColor = profile.rating >= 4.5
-    ? 'rgba(245, 200, 66, 0.5)'
-    : 'rgba(124, 106, 255, 0.5)'
+  // Простая карточка — заглушка если ProfileCard упадёт
+  const ProfileFallback = (
+    <div style={{
+      width:300, background:'linear-gradient(145deg,#1a1a2e,#0f3460)',
+      border:'1px solid var(--border)', borderRadius:24, padding:32, textAlign:'center'
+    }}>
+      <div style={{
+        width:80, height:80, borderRadius:20, margin:'0 auto 16px',
+        background:'linear-gradient(135deg,var(--purple),var(--accent))',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:32, fontWeight:800, fontFamily:'var(--font-h)'
+      }}>
+        {displayName[0].toUpperCase()}
+      </div>
+      <div style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:20, marginBottom:4 }}>@{displayName}</div>
+      <div style={{ color:'var(--t3)', fontSize:13 }}>★ {(profile.rating||5).toFixed(1)} · {profile.reviewCount||0} отзывов</div>
+    </div>
+  )
 
   return (
     <div style={{ maxWidth:1100, margin:'0 auto', padding:'32px 20px' }}>
@@ -82,26 +96,29 @@ export default function ProfilePage() {
 
         {/* Левая колонка */}
         <div style={{ display:'flex', flexDirection:'column', gap:16, alignItems:'center' }}>
-          <ProfileCard
-            name={displayName}
-            title={profile.isVerified ? '✓ Верифицирован' : `На сайте с ${joinDate.toLocaleDateString('ru', { month:'long', year:'numeric' })}`}
-            handle={profile.username || profile.firstName || ''}
-            status={`★ ${(profile.rating || 5).toFixed(1)} · ${profile.reviewCount || 0} отзывов`}
-            contactText={isMe ? 'Кошелёк' : 'Профиль'}
-            avatarUrl={profile.photoUrl || ''}
-            showUserInfo={true}
-            enableTilt={true}
-            enableMobileTilt={false}
-            behindGlowEnabled={true}
-            behindGlowColor={glowColor}
-            innerGradient="linear-gradient(145deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)"
-            onContactClick={() => isMe ? navigate('/wallet') : null}
-          />
+
+          <ErrorBoundary fallback={ProfileFallback}>
+            <ProfileCard
+              name={displayName}
+              title={profile.isVerified ? '✓ Верифицирован' : `На сайте с ${joinDate.toLocaleDateString('ru', { month:'long', year:'numeric' })}`}
+              handle={profile.username || profile.firstName || ''}
+              status={`★ ${(profile.rating || 5).toFixed(1)} · ${profile.reviewCount || 0} отзывов`}
+              contactText={isMe ? 'Кошелёк' : 'Профиль'}
+              avatarUrl={profile.photoUrl || ''}
+              showUserInfo={true}
+              enableTilt={true}
+              enableMobileTilt={false}
+              behindGlowEnabled={true}
+              behindGlowColor={glowColor}
+              innerGradient="linear-gradient(145deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)"
+              onContactClick={() => isMe ? navigate('/wallet') : null}
+            />
+          </ErrorBoundary>
 
           <div style={{ width:'100%', background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:16, padding:'16px 20px' }}>
             <div style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:11, color:'var(--t3)', letterSpacing:'0.12em', marginBottom:12 }}>СТАТИСТИКА</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12 }}>
-              {[['📦', 'Продаж', profile.totalSales || 0], ['🛒', 'Покупок', profile.totalPurchases || 0]].map(([icon, label, val]) => (
+              {[['📦','Продаж',profile.totalSales||0],['🛒','Покупок',profile.totalPurchases||0]].map(([icon,label,val]) => (
                 <div key={label} style={{ background:'var(--bg3)', borderRadius:12, padding:'12px', textAlign:'center' }}>
                   <div style={{ fontSize:18 }}>{icon}</div>
                   <div style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:20 }}>{val}</div>
@@ -128,7 +145,7 @@ export default function ProfilePage() {
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               <StarRating value={Math.round(profile.rating || 5)} />
-              <span style={{ color:'var(--t3)', fontSize:13 }}>{(profile.rating || 5).toFixed(1)} · {profile.reviewCount || 0} отзывов</span>
+              <span style={{ color:'var(--t3)', fontSize:13 }}>{(profile.rating||5).toFixed(1)} · {profile.reviewCount||0} отзывов</span>
             </div>
             {profile.bio && (
               <p style={{ color:'var(--t2)', fontSize:14, lineHeight:1.7, marginTop:12, background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, padding:'12px 16px', margin:'12px 0 0' }}>
@@ -137,20 +154,18 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Табы */}
           <div style={{ display:'flex', gap:6, marginBottom:20 }}>
-            {[['products', `📦 Товары (${products.length})`], ['reviews', `★ Отзывы (${reviews.length})`]].map(([v, l]) => (
+            {[['products',`📦 Товары (${products.length})`],['reviews',`★ Отзывы (${reviews.length})`]].map(([v,l]) => (
               <button key={v} onClick={() => setTab(v)} style={{
                 padding:'10px 20px', borderRadius:10, border:'1px solid', cursor:'pointer',
                 fontSize:13, fontWeight:700, fontFamily:'var(--font-h)', transition:'all 0.15s',
-                background: tab === v ? 'rgba(245,200,66,0.1)' : 'transparent',
-                borderColor: tab === v ? 'rgba(245,200,66,0.4)' : 'var(--border)',
-                color: tab === v ? 'var(--accent)' : 'var(--t3)',
+                background: tab===v ? 'rgba(245,200,66,0.1)' : 'transparent',
+                borderColor: tab===v ? 'rgba(245,200,66,0.4)' : 'var(--border)',
+                color: tab===v ? 'var(--accent)' : 'var(--t3)',
               }}>{l}</button>
             ))}
           </div>
 
-          {/* Товары */}
           {tab === 'products' && (
             products.length === 0
               ? <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--t3)' }}>
@@ -163,7 +178,6 @@ export default function ProfilePage() {
                 </div>
           )}
 
-          {/* Отзывы */}
           {tab === 'reviews' && (
             reviews.length === 0
               ? <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--t3)' }}>
@@ -196,9 +210,7 @@ export default function ProfilePage() {
 
       <style>{`
         @media (max-width: 900px) {
-          div[style*="grid-template-columns: 320px"] {
-            grid-template-columns: 1fr !important;
-          }
+          .profile-layout { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
