@@ -259,6 +259,7 @@ export default function Layout({ children }) {
                   { to:'/profile', icon:'👤', label:'Профиль' },
                 ] : []),
                 { to:'/legal/rules',    icon:'📋', label:'Правила' },
+                { to:'/legal/refund',   icon:'↩',  label:'Возврат' },
                 { to:'/legal/contacts', icon:'📬', label:'Контакты' },
               ].map(item => (
                 <Link key={item.to} to={item.to} style={{
@@ -324,7 +325,7 @@ export default function Layout({ children }) {
             </div>
             {[
               { title:'Маркетплейс', links:[{to:'/catalog',label:'Каталог'},{to:'/sell',label:'Продать'},{to:'/deals',label:'Сделки'}] },
-              { title:'Поддержка',   links:[{to:'/legal/rules',label:'Правила'},{to:'/legal/privacy',label:'Конфиденциальность'},{to:'/legal/contacts',label:'Контакты'}] },
+              { title:'Поддержка',   links:[{to:'/legal/rules',label:'Правила'},{to:'/legal/refund',label:'Возврат'},{to:'/legal/privacy',label:'Конфиденциальность'},{to:'/legal/contacts',label:'Контакты'}] },
               { title:'Аккаунт',     links:[{to:'/auth',label:'Войти'},{to:'/wallet',label:'Кошелёк'},{to:'/profile',label:'Профиль'}] },
             ].map(col => (
               <div key={col.title}>
