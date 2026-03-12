@@ -6,6 +6,16 @@ import toast from 'react-hot-toast'
 const CATEGORIES = ['game-accounts','game-currency','items','skins','keys','subscriptions','boost','other']
 const CAT_NAMES  = { 'game-accounts':'Аккаунты','game-currency':'Валюта','items':'Предметы','skins':'Скины','keys':'Ключи','subscriptions':'Подписки','boost':'Буст','other':'Прочее' }
 
+// Вынесен НАРУЖУ из компонента — иначе ре-рендер пересоздаёт компонент и инпут теряет фокус
+function Field({ label, children }) {
+  return (
+    <div style={{ marginBottom:18 }}>
+      <label style={{ fontSize:11, fontWeight:700, color:'var(--t3)', fontFamily:'var(--font-h)', letterSpacing:'0.1em', display:'block', marginBottom:7 }}>{label}</label>
+      {children}
+    </div>
+  )
+}
+
 export default function SellPage() {
   const { user } = useStore()
   const navigate  = useNavigate()
@@ -14,7 +24,7 @@ export default function SellPage() {
 
   if (!user) { navigate('/auth'); return null }
 
-  const upd = (k,v) => setForm(f => ({ ...f, [k]:v }))
+  const upd = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const submit = async () => {
     if (!form.title||!form.description||!form.price||!form.category) return toast.error('Заполните обязательные поля')
@@ -27,13 +37,6 @@ export default function SellPage() {
     } catch(e) { toast.error(e.response?.data?.error||'Ошибка') }
     setLoading(false)
   }
-
-  const Field = ({ label, children }) => (
-    <div style={{ marginBottom:18 }}>
-      <label style={{ fontSize:11, fontWeight:700, color:'var(--t3)', fontFamily:'var(--font-h)', letterSpacing:'0.1em', display:'block', marginBottom:7 }}>{label}</label>
-      {children}
-    </div>
-  )
 
   return (
     <div style={{ maxWidth:680, margin:'0 auto', padding:'32px 20px' }}>
