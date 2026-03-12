@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Package, Star, ShoppingCart, ShieldCheck, Eye, Heart } from '../components/Icon'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api, useStore } from '../store'
 import toast from 'react-hot-toast'
@@ -22,7 +23,7 @@ export default function ProductPage() {
     setBuying(true)
     try {
       await api.post('/deals', { productId: product._id || product.id })
-      toast.success('🎉 Сделка создана!')
+      toast.success('Сделка создана!')
       navigate('/deals')
     } catch(e) { toast.error(e.response?.data?.error||'Ошибка') }
     setBuying(false)
@@ -62,7 +63,7 @@ export default function ProductPage() {
             backgroundSize:'cover', backgroundPosition:'center', marginBottom:10,
             display:'flex', alignItems:'center', justifyContent:'center', fontSize:60, color:'var(--t4)'
           }}>
-            {!product.images?.length && '📦'}
+            {!product.images?.length && <Package size={64} strokeWidth={0.75} style={{opacity:0.25}}/>}
           </div>
           {product.images?.length > 1 && (
             <div style={{ display:'flex', gap:8 }}>
@@ -98,7 +99,7 @@ export default function ProductPage() {
               </div>
               <div>
                 <div style={{ fontWeight:600, fontSize:14 }}>@{seller.username||seller.firstName}</div>
-                <div style={{ fontSize:12, color:'var(--t3)' }}>★ {parseFloat(seller.rating||5).toFixed(1)} · {seller.totalSales||0} продаж</div>
+                <div style={{ fontSize:12, color:'var(--t3)' }}><Star size={12} strokeWidth={2} style={{marginRight:3}}/>{parseFloat(seller.rating||5).toFixed(1)} · {seller.totalSales||0} продаж</div>
               </div>
             </Link>
           )}
@@ -106,10 +107,10 @@ export default function ProductPage() {
           {!isMine && product.status==='active' && (
             <div style={{ marginBottom:16 }}>
               <button className="btn btn-primary btn-full" onClick={buy} disabled={buying} style={{ padding:'16px', fontSize:16, marginBottom:10 }}>
-                {buying ? 'Создание сделки...' : `🛒 Купить за $${product.price}`}
+                {buying ? 'Создание сделки...' : `Купить за $${product.price}`}
               </button>
               <div style={{ fontSize:12, color:'var(--t3)', textAlign:'center', lineHeight:1.6 }}>
-                🔒 Средства заморожены до подтверждения. Если товар не соответствует — откройте спор.
+                Средства заморожены до подтверждения. Если товар не соответствует — откройте спор.
               </div>
             </div>
           )}
@@ -117,8 +118,8 @@ export default function ProductPage() {
           {product.status!=='active' && !isMine && <div className="badge badge-red" style={{ marginBottom:16 }}>Товар недоступен</div>}
 
           <div style={{ display:'flex', gap:16, color:'var(--t4)', fontSize:12 }}>
-            <span>👁 {product.views||0} просмотров</span>
-            <span>♡ {product.favorites||0} в избранном</span>
+            <span><Eye size={13} strokeWidth={1.75} style={{marginRight:4}}/>{product.views||0} просмотров</span>
+            <span><Heart size={13} strokeWidth={1.75} style={{marginRight:4}}/>{product.favorites||0} в избранном</span>
           </div>
         </div>
       </div>
