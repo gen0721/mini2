@@ -193,6 +193,51 @@ router.post('/:id/confirm', auth, async (req, res) => {
   }
 });
 
+
+// ── POST /deals/:id/refund ────────────────────────────────────────────────────
+router.post('/:id/refund', auth, async (req, res) => {
+  try {
+    const deal = await queryOne('SELECT * FROM deals WHERE id = $1', [req.params.id]);
+    if (!deal)                         return res.status(404).json({ error: 'Не найдена' });
+    if (deal.buyer_id !== req.userId)  return res.status(403).json({ error: 'Нет доступа' });
+    if (deal.status !== 'active')      return res.status(400).json({ error: 'Нельзя запросить возврат' });
+    if (deal.delivered_at)             return res.status(400).json({ error: 'Товар уже передан. Откройте спор.' });
+
+    const { reason } = req.body;
+    await transaction(async (client) => {
+      // Возвращаем деньги покупателю
+      await client.query(
+        `UPDATE users SET balance = balance + $1, frozen_balance = frozen_balance - $1 WHERE id = $2`,
+        [deal.amount, deal.buyer_id]
+      );
+      // Размораживаем товар
+      await client.query(`UPDATE products SET status = 'active' WHERE id = $1`, [deal.product_id]);
+      // Закрываем сделку
+      await client.query(
+        `UPDATE deals SET status = 'refunded', updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE id = $1`,
+        [deal.id]
+      );
+      await client.query(`
+        INSERT INTO transactions (id, user_id, type, amount, status, description, deal_id)
+        VALUES ($1,$2,'refund',$3,'completed',$4,$5)
+      `, [crypto.randomUUID(), deal.buyer_id, deal.amount, `Возврат: ${reason||'отмена покупателем'}`, deal.id]);
+      await addSystemMessage(client, deal.id, `↩ Покупатель запросил возврат. Деньги возвращены.`);
+    });
+
+    const [buyer, seller, product] = await Promise.all([
+      queryOne('SELECT * FROM users WHERE id = $1', [deal.buyer_id]),
+      queryOne('SELECT * FROM users WHERE id = $1', [deal.seller_id]),
+      queryOne('SELECT title FROM products WHERE id = $1', [deal.product_id]),
+    ]);
+    notify.notifyDealDispute && notify.notifyDealDispute(buyer, seller, product?.title||'').catch(() => {});
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Refund error:', e);
+    res.status(500).json({ error: e.message || 'Ошибка возврата' });
+  }
+});
+
 // ── POST /deals/:id/dispute ───────────────────────────────────────────────────
 router.post('/:id/dispute', auth, async (req, res) => {
   try {
