@@ -86,7 +86,7 @@ export default function WalletPage() {
       }}>
         <div style={{ fontSize:11, fontWeight:700, color:'var(--t3)', fontFamily:'var(--font-h)', letterSpacing:'0.14em', marginBottom:8 }}>ДОСТУПНЫЙ БАЛАНС</div>
         <div style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:48, color:'var(--accent)', marginBottom:4 }}>${bal.toFixed(2)}</div>
-        {frz > 0 && <div style={{ color:'var(--t3)', fontSize:13, marginBottom:8 }}>🔒 В сделках: ${frz.toFixed(2)}</div>}
+        {frz > 0 && <div style={{ color:'var(--t3)', fontSize:13, marginBottom:8 }}>В сделках: ${frz.toFixed(2)}</div>}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginTop:20 }}>
           <button className="btn btn-primary" onClick={() => { setModal('deposit'); setAmount('') }}>↓ Пополнить</button>
           <button className="btn btn-secondary" onClick={() => { setModal('withdraw'); setAmount(''); setAddress('') }}>↑ Вывести</button>
@@ -113,7 +113,7 @@ export default function WalletPage() {
         </div>
       ) : txs.length === 0 ? (
         <div style={{ textAlign:'center', padding:40, color:'var(--t3)' }}>
-          <div style={{ fontSize:32, marginBottom:12 }}>💸</div>
+          <div style={{ fontSize:32, marginBottom:12 }}></div>
           <div style={{ fontFamily:'var(--font-h)', fontWeight:700 }}>Транзакций нет</div>
         </div>
       ) : (
@@ -153,8 +153,8 @@ export default function WalletPage() {
           <div style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:20, marginBottom:20 }}>↓ Пополнить баланс</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:20 }}>
             {[
-              { v:'rukassa', icon:'💳', label:'RuKassa', desc:'Карта РФ, СБП' },
-              { v:'cryptocloud', icon:'☁️', label:'CryptoCloud', desc:'USDT, BTC, ETH' },
+              { v:'rukassa', icon:'', label:'RuKassa', desc:'Карта РФ, СБП' },
+              { v:'cryptocloud', icon:'️', label:'CryptoCloud', desc:'USDT, BTC, ETH' },
             ].map(m => (
               <button key={m.v} onClick={() => setPayMethod(m.v)} style={{
                 padding:'12px 8px', borderRadius:12, cursor:'pointer', textAlign:'center', border:'1.5px solid',
@@ -211,7 +211,7 @@ export default function WalletPage() {
           <input className="inp" placeholder="@username или адрес CryptoBot"
             value={address} onChange={e => setAddress(e.target.value)} style={{ marginBottom:16 }}/>
           <div style={{ background:'rgba(245,200,66,0.06)', border:'1px solid rgba(245,200,66,0.2)', borderRadius:12, padding:12, marginBottom:16, fontSize:12, color:'var(--t3)', lineHeight:1.6 }}>
-            💡 Откройте <a href="https://t.me/CryptoBot" target="_blank" rel="noopener" style={{ color:'var(--accent)' }}>@CryptoBot</a> в Telegram и вставьте адрес USDT.
+            Откройте <a href="https://t.me/CryptoBot" target="_blank" rel="noopener" style={{ color:'var(--accent)' }}>@CryptoBot</a> в Telegram и вставьте адрес USDT.
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:10 }}>
             <button className="btn btn-ghost" onClick={() => setModal(null)}>Отмена</button>
