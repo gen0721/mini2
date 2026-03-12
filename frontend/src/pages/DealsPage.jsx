@@ -108,11 +108,11 @@ export default function DealsPage() {
   }
 
   const requestRefund = async () => {
-    if (!window.confirm('Запросить возврат? Деньги вернутся на ваш баланс.')) return
+    if (!window.confirm('Вернуть деньги покупателю? Сделка будет отменена.')) return
     setWorking(true)
     try {
       await api.post(`/deals/${selected._id||selected.id}/refund`, { reason: 'Отмена покупателем' })
-      toast.success('Деньги возвращены на баланс.')
+      toast.success('Деньги возвращены покупателю.')
       reloadAll(selected._id||selected.id)
     } catch(e) { toast.error(e.response?.data?.error||'Ошибка') }
     setWorking(false)
@@ -263,30 +263,24 @@ export default function DealsPage() {
 
             {/* Покупатель — кнопки после получения */}
             {selected.status==='active' && isBuyer(selected) && selected.deliveredAt && (
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                 <button className="btn btn-primary" onClick={confirm} disabled={working} style={{ fontSize:12, padding:'10px 8px' }}>
                   <CheckCircle size={14} style={{marginRight:4}}/> Подтвердить
                 </button>
                 <button className="btn btn-danger" onClick={dispute} disabled={working} style={{ fontSize:12, padding:'10px 8px' }}>
                   <AlertTriangle size={14} style={{marginRight:4}}/> Спор
                 </button>
-                <button onClick={requestRefund} disabled={working} style={{
-                  padding:'10px 8px', borderRadius:10, border:'1px solid rgba(34,211,238,0.4)', cursor:'pointer',
-                  background:'rgba(34,211,238,0.08)', color:'#22d3ee', fontSize:12, fontWeight:600
-                }}>
-                  <RotateCcw size={14} style={{marginRight:4}}/> Возврат
-                </button>
               </div>
             )}
 
-            {/* Покупатель — возврат до передачи */}
-            {selected.status==='active' && isBuyer(selected) && !selected.deliveredAt && (
+            {/* Продавец — кнопка возврата денег покупателю */}
+            {selected.status==='active' && isSeller(selected) && (
               <button onClick={requestRefund} disabled={working} style={{
                 padding:'10px', borderRadius:10, border:'1px solid rgba(34,211,238,0.3)', cursor:'pointer',
                 background:'rgba(34,211,238,0.06)', color:'#22d3ee', fontSize:13, fontWeight:600, width:'100%',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:6
               }}>
-                <RotateCcw size={15} strokeWidth={1.75}/> Отменить и вернуть деньги
+                <RotateCcw size={15} strokeWidth={1.75}/> Вернуть деньги покупателю
               </button>
             )}
 
