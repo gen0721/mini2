@@ -464,18 +464,64 @@ export default function AdminPage() {
 
         {/* MESSAGES */}
         {tab==='messages' && (
-          <div style={{ maxWidth:500 }}>
-            <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:18, marginBottom:16 }}>Отправить TG сообщение</h2>
+          <div style={{ maxWidth:520 }}>
+            <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:18, marginBottom:16 }}>Отправить Telegram сообщение</h2>
             <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:16, padding:24 }}>
-              <Label>ID ПОЛЬЗОВАТЕЛЯ</Label>
-              <input className="inp" placeholder="UUID пользователя" value={msgUserId} onChange={e => setMsgUserId(e.target.value)} style={{ marginBottom:12 }}/>
-              <Label>ТЕКСТ</Label>
-              <textarea className="inp" rows={4} placeholder="Сообщение..." value={msgText} onChange={e => setMsgText(e.target.value)} style={{ resize:'vertical', marginBottom:16 }}/>
-              <button className="btn btn-primary btn-full" onClick={async () => {
-                if (!msgUserId || !msgText) return toast.error('Заполните поля')
-                const res = await adminApi.post('/message', { userId: msgUserId, text: msgText })
-                res.ok ? (toast.success('Отправлено!'), setMsgText(''), setMsgUserId('')) : toast.error(res.error || 'Ошибка')
-              }}>Отправить в Telegram</button>
+              <Label>ПОЛЬЗОВАТЕЛЬ</Label>
+              <div style={{ position:'relative', marginBottom:12 }}>
+                <input className="inp" placeholder="@логин или Telegram ID"
+                  value={msgUserId} onChange={e => setMsgUserId(e.target.value)}
+                  style={{ paddingRight: msgUserId ? 36 : 12 }}
+                />
+                {msgUserId && (
+                  <button onClick={() => setMsgUserId('')} style={{
+                    position:'absolute', right:10, top:'50%', transform:'translateY(-50%)',
+                    background:'none', border:'none', color:'var(--t4)', cursor:'pointer', fontSize:16, lineHeight:1
+                  }}>×</button>
+                )}
+              </div>
+              {/* Быстрый выбор из загруженных юзеров */}
+              {users.length > 0 && msgUserId.length >= 1 && (
+                <div style={{
+                  background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10,
+                  marginBottom:12, maxHeight:160, overflowY:'auto'
+                }}>
+                  {users
+                    .filter(u => {
+                      const q = msgUserId.replace(/^@/,'').toLowerCase()
+                      return (u.username||'').toLowerCase().includes(q) || (u.telegram_id||'').includes(q)
+                    })
+                    .slice(0,6)
+                    .map(u => (
+                      <div key={u.id||u._id} onClick={() => setMsgUserId(u.username||u.telegram_id)}
+                        style={{ padding:'10px 14px', cursor:'pointer', fontSize:13, borderBottom:'1px solid var(--border)',
+                          display:'flex', justifyContent:'space-between', alignItems:'center' }}
+                        onMouseEnter={e => e.currentTarget.style.background='var(--bg4)'}
+                        onMouseLeave={e => e.currentTarget.style.background='transparent'}
+                      >
+                        <span style={{ fontWeight:600 }}>@{u.username||'—'}</span>
+                        <span style={{ fontSize:11, color:'var(--t3)' }}>
+                          {u.telegram_id ? `TG: ${u.telegram_id}` : 'TG не привязан'}
+                        </span>
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
+              <Label>ТЕКСТ СООБЩЕНИЯ</Label>
+              <textarea className="inp" rows={4} placeholder="Сообщение..." value={msgText}
+                onChange={e => setMsgText(e.target.value)} style={{ resize:'vertical', marginBottom:16 }}/>
+              <button className="btn btn-primary btn-full" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}
+                onClick={async () => {
+                  if (!msgUserId || !msgText) return toast.error('Заполните все поля')
+                  const res = await adminApi.post('/message', { username: msgUserId, text: msgText })
+                  res.ok ? (toast.success('Отправлено!'), setMsgText(''), setMsgUserId('')) : toast.error(res.error || 'Ошибка')
+                }}>
+                <Send size={16} strokeWidth={1.75}/> Отправить в Telegram
+              </button>
+              <div style={{ fontSize:12, color:'var(--t3)', marginTop:10, textAlign:'center' }}>
+                Введите @логин или Telegram ID пользователя
+              </div>
             </div>
           </div>
         )}
