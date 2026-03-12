@@ -20,7 +20,7 @@ function DealListItem({ d, isSelected, isBuyer, onClick }) {
       </div>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <span style={{ fontSize:11, color:'var(--t3)' }}>
-          {isBuyer ? '🛒 Покупка' : '💼 Продажа'} · @{(isBuyer ? d.seller : d.buyer)?.username||'—'}
+          {isBuyer ? ' Покупка' : ' Продажа'} · @{(isBuyer ? d.seller : d.buyer)?.username||'—'}
         </span>
         <span style={{ fontSize:11, fontWeight:700, color: STATUS_COLORS[d.status]||'var(--t3)' }}>{STATUS_LABELS[d.status]||d.status}</span>
       </div>
@@ -83,7 +83,7 @@ export default function DealsPage() {
     setWorking(true)
     try {
       await api.post(`/deals/${selected._id||selected.id}/deliver`, { deliveryData: delivery })
-      toast.success('📦 Товар передан покупателю!')
+      toast.success(' Товар передан покупателю!')
       setDelivery('')
       reloadAll(selected._id||selected.id)
     } catch(e) { toast.error(e.response?.data?.error||'Ошибка') }
@@ -95,7 +95,7 @@ export default function DealsPage() {
     setWorking(true)
     try {
       await api.post(`/deals/${selected._id||selected.id}/confirm`)
-      toast.success('✅ Сделка завершена! Деньги переведены продавцу.')
+      toast.success('✓ Сделка завершена! Деньги переведены продавцу.')
       reloadAll(selected._id||selected.id)
     } catch(e) { toast.error(e.response?.data?.error||'Ошибка') }
     setWorking(false)
@@ -118,7 +118,7 @@ export default function DealsPage() {
     setWorking(true)
     try {
       await api.post(`/deals/${selected._id||selected.id}/dispute`, { reason })
-      toast.success('⚠️ Спор открыт. Администратор рассмотрит в течение 24ч.')
+      toast.success('!️ Спор открыт. Администратор рассмотрит в течение 24ч.')
       reloadAll(selected._id||selected.id)
     } catch(e) { toast.error(e.response?.data?.error||'Ошибка') }
     setWorking(false)
@@ -154,7 +154,7 @@ export default function DealsPage() {
             [0,1,2,3].map(i => <div key={i} className="skel" style={{ height:80, borderRadius:14 }}/>)
           ) : deals.length===0 ? (
             <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--t3)' }}>
-              <div style={{ fontSize:32, marginBottom:10 }}>🤝</div>
+              <div style={{ fontSize:32, marginBottom:10 }}></div>
               <div style={{ fontFamily:'var(--font-h)', fontWeight:700 }}>Сделок нет</div>
             </div>
           ) : deals.map(d => (
@@ -172,7 +172,7 @@ export default function DealsPage() {
         <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:20, display:'flex', flexDirection:'column', overflow:'hidden', minHeight:500 }}>
           {!selected ? (
             <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--t3)', flexDirection:'column', gap:12 }}>
-              <div style={{ fontSize:40 }}>👈</div>
+              <div style={{ fontSize:40 }}></div>
               <div style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:16 }}>Выберите сделку</div>
               <div style={{ fontSize:13 }}>Нажмите на сделку слева</div>
             </div>
@@ -201,9 +201,9 @@ export default function DealsPage() {
                 {selected.status === 'active' && (
                   <div style={{ marginTop:12, display:'flex', alignItems:'center', gap:0 }}>
                     {[
-                      ['💰', 'Оплачено', true],
-                      ['📦', 'Передан', !!selected.deliveredAt],
-                      ['✅', 'Подтверждено', false],
+                      ['', 'Оплачено', true],
+                      ['', 'Передан', !!selected.deliveredAt],
+                      ['', 'Подтверждено', false],
                     ].map(([icon, label, done], i, arr) => (
                       <React.Fragment key={label}>
                         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
@@ -247,7 +247,7 @@ export default function DealsPage() {
               {/* Данные товара */}
               {selected.deliveryData && (
                 <div style={{ margin:'0 16px 8px', padding:'12px 16px', background:'rgba(46,204,113,0.07)', border:'1px solid rgba(46,204,113,0.25)', borderRadius:12 }}>
-                  <div style={{ fontSize:11, fontWeight:700, color:'var(--green)', fontFamily:'var(--font-h)', letterSpacing:'0.1em', marginBottom:6 }}>📦 ДАННЫЕ ТОВАРА</div>
+                  <div style={{ fontSize:11, fontWeight:700, color:'var(--green)', fontFamily:'var(--font-h)', letterSpacing:'0.1em', marginBottom:6 }}> ДАННЫЕ ТОВАРА</div>
                   <pre style={{ fontSize:13, color:'var(--t1)', whiteSpace:'pre-wrap', wordBreak:'break-all', margin:0 }}>{selected.deliveryData}</pre>
                 </div>
               )}
@@ -271,10 +271,10 @@ export default function DealsPage() {
                 {selected.status==='active' && isBuyer(selected) && selected.deliveredAt && (
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
                     <button className="btn btn-primary" onClick={confirm} disabled={working} style={{ fontSize:13 }}>
-                      ✅ Подтвердить
+                      ✓ Подтвердить
                     </button>
                     <button className="btn btn-danger" onClick={dispute} disabled={working} style={{ fontSize:13 }}>
-                      ⚠️ Спор
+                      !️ Спор
                     </button>
                     <button onClick={requestRefund} disabled={working} style={{
                       padding:'10px', borderRadius:10, border:'1px solid rgba(34,211,238,0.4)', cursor:'pointer',
@@ -298,7 +298,7 @@ export default function DealsPage() {
                 {/* Спор — инфо */}
                 {selected.status==='disputed' && (
                   <div style={{ padding:'10px 14px', background:'rgba(231,76,60,0.07)', border:'1px solid rgba(231,76,60,0.25)', borderRadius:10, fontSize:13, color:'var(--red)' }}>
-                    ⚠️ Спор на рассмотрении. Администратор решит в течение 24ч.
+                    !️ Спор на рассмотрении. Администратор решит в течение 24ч.
                   </div>
                 )}
 
