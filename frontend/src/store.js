@@ -22,17 +22,22 @@ api.interceptors.response.use(r => r, err => {
 
 export const useStore = create(
   persist(
-    set => ({
+    (set) => ({
       user: null,
+      hydrated: false,          // ← флаг: store загружен из localStorage
       setUser: user => set({ user }),
+      setHydrated: () => set({ hydrated: true }),
       logout: () => { localStorage.removeItem('mn_token'); set({ user: null }) },
       categories: [],
       setCategories: cats => set({ categories: cats }),
     }),
     {
       name: 'mn_store',
-      // Сохраняем только user, categories не нужны в localStorage
       partialize: state => ({ user: state.user }),
+      onRehydrateStorage: () => (state) => {
+        // вызывается когда persist закончил загрузку из localStorage
+        state?.setHydrated()
+      },
     }
   )
 )
