@@ -77,7 +77,7 @@ export default function SellPage() {
 
         <Field label="ТИП ПЕРЕДАЧИ">
           <div style={{ display:'flex', gap:8 }}>
-            {[['manual','📝 Вручную'],['auto','⚡ Авто']].map(([v,l]) => (
+            {[['manual','Вручную'],['auto','Авто']].map(([v,l]) => (
               <button key={v} onClick={() => upd('deliveryType', v)} style={{
                 flex:1, padding:'10px', borderRadius:10, border:'1px solid', cursor:'pointer', fontSize:13, fontWeight:600, transition:'all 0.15s',
                 background: form.deliveryType===v ? 'rgba(245,200,66,0.1)' : 'transparent',
