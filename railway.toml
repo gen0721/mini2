@@ -3,11 +3,8 @@ builder = "nixpacks"
 buildCommand = "cd frontend && npm install && npm run build && cd ../backend && npm install"
 
 [build.nixpacksPlan.phases.setup]
-nixPkgs = ["nodejs_20", "python312", "gcc", "gnumake"]
+nixPkgs = ["nodejs_20"]
 
 [deploy]
 startCommand = "node backend/server.js"
 healthcheckPath = "/api/health"
-
-[[volumes]]
-mountPath = "/app/data"
