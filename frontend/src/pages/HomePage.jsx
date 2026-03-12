@@ -1,3 +1,4 @@
+import RotatingText from '../components/RotatingText/RotatingText'
 import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { api, useStore } from '../store'
@@ -435,10 +436,22 @@ export default function HomePage() {
             fontSize:'clamp(36px, 6vw, 80px)',
             lineHeight:1.05, letterSpacing:'-0.03em',
             marginBottom:20, textShadow:'0 4px 40px rgba(0,0,0,0.8)',
-            animationDelay:'0.1s'
+            animationDelay:'0.1s',
+            display:'flex', flexDirection:'column', alignItems:'center', gap:12
           }}>
-            Покупай и продавай<br/>
-            <span style={{ color:'var(--accent)', textShadow:'0 0 40px rgba(245,200,66,0.5)' }}>безопасно</span>
+            <span>Покупай и продавай</span>
+            <RotatingText
+              texts={['безопасно', 'быстро', 'выгодно', 'с гарантией']}
+              mainClassName="text-rotate-highlight"
+              staggerFrom="last"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '-120%' }}
+              staggerDuration={0.025}
+              splitLevelClassName="overflow-hidden"
+              transition={{ type: 'spring', damping: 30, stiffness: 400 }}
+              rotationInterval={2500}
+            />
           </h1>
 
           <p className="anim-up" style={{
