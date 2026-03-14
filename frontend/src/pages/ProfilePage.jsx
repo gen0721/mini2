@@ -34,10 +34,6 @@ function calcLevel(totalSales) {
 }
 
 export default function ProfilePage() {
-  useMeta(profile ? {
-    title: `@${profile.username} — профиль продавца`,
-    description: `Профиль @${profile.username} на Minions Market. Рейтинг ${profile.rating}, ${profile.total_sales || 0} продаж.`,
-  } : { title: 'Профиль' })
   const {
  id } = useParams()
   const { user: me, hydrated } = useStore()
@@ -48,6 +44,11 @@ export default function ProfilePage() {
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState(null)
   const [tab, setTab]           = useState('products')
+
+  useMeta(profile ? {
+    title: `@${profile.username} — профиль продавца`,
+    description: `Профиль @${profile.username} на Minions Market. Рейтинг ${profile.rating}, ${profile.total_sales || 0} продаж.`,
+  } : { title: 'Профиль' })
 
   useEffect(() => {
     if (!hydrated) return
