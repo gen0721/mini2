@@ -115,7 +115,7 @@ export default function WalletPage() {
   const frz = parseFloat(user.frozenBalance || 0)
 
   return (
-    <div style={{ maxWidth:600, margin:'0 auto', padding:'24px 16px 100px' }}>
+    <div style={{ maxWidth:600, margin:'0 auto', padding:'24px 12px 100px' }}>
       <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:26, marginBottom:20 }}>💳 Кошелёк</h1>
 
       {/* Карточка баланса */}
