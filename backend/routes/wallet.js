@@ -7,7 +7,7 @@ const cryptopay   = require('../utils/cryptopay');
 const notify   = require('../utils/notify');
 const { sanitizeUser } = require('./auth');
 
-const MIN_DEPOSIT = 1;
+const MIN_DEPOSIT = 2;
 
 // ── GET /wallet/transactions ──────────────────────────────────────────────────
 router.get('/transactions', auth, async (req, res) => {
