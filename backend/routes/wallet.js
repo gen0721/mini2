@@ -3,7 +3,7 @@ const crypto   = require('crypto');
 const { queryOne, queryAll, run, transaction } = require('../models/db');
 const { auth } = require('../middleware/auth');
 const rukassa  = require('../utils/rukassa');
-const cryptocloud = require('../utils/cryptocloud');
+const cryptopay   = require('../utils/cryptopay');
 const notify   = require('../utils/notify');
 const { sanitizeUser } = require('./auth');
 
@@ -48,25 +48,29 @@ router.post('/deposit/rukassa', auth, async (req, res) => {
   }
 });
 
-// ── POST /wallet/deposit/cryptocloud ─────────────────────────────────────────
-router.post('/deposit/cryptocloud', auth, async (req, res) => {
+// ── POST /wallet/deposit/cryptopay ───────────────────────────────────────────
+router.post('/deposit/cryptopay', auth, async (req, res) => {
   try {
     const amount = parseFloat(req.body.amount);
     if (!amount || amount < MIN_DEPOSIT) return res.status(400).json({ error: `Минимум $${MIN_DEPOSIT}` });
 
-    const orderId = `cc_${req.userId}_${Date.now()}`;
-    const result  = await cryptocloud.createInvoice({ amount, orderId });
+    const orderId = `cp_${req.userId}_${Date.now()}`;
+    const result  = await cryptopay.createInvoice({
+      amount,
+      orderId,
+      description: `Пополнение Minions Market на $${amount}`,
+    });
     if (!result.ok) return res.status(502).json({ error: result.error });
 
     const user = await queryOne('SELECT balance FROM users WHERE id = $1', [req.userId]);
     await run(`
       INSERT INTO transactions (id, user_id, type, amount, status, description, gateway_type, gateway_invoice_id, gateway_pay_url, gateway_order_id, balance_before)
-      VALUES ($1,$2,'deposit',$3,'pending','Пополнение CryptoCloud','cryptocloud',$4,$5,$6,$7)
+      VALUES ($1,$2,'deposit',$3,'pending','Пополнение CryptoPay (Telegram)','cryptopay',$4,$5,$6,$7)
     `, [crypto.randomUUID(), req.userId, amount, result.invoiceId, result.payUrl, orderId, user?.balance || 0]);
 
     res.json({ payUrl: result.payUrl, orderId });
   } catch (e) {
-    console.error('CryptoCloud deposit error:', e);
+    console.error('CryptoPay deposit error:', e);
     res.status(500).json({ error: 'Ошибка платёжной системы' });
   }
 });
@@ -92,20 +96,30 @@ router.post('/webhook/rukassa', async (req, res) => {
   }
 });
 
-// ── POST /wallet/webhook/cryptocloud ─────────────────────────────────────────
-router.post('/webhook/cryptocloud', async (req, res) => {
+// ── POST /wallet/webhook/cryptopay ───────────────────────────────────────────
+router.post('/webhook/cryptopay', async (req, res) => {
   try {
-    if (!cryptocloud.verifyWebhook(req.body)) return res.status(400).send('Invalid');
-    const { order_id, status } = req.body;
-    if (status !== 'success') return res.send('ok');
+    // Проверяем подпись
+    const signature = req.headers['crypto-pay-api-signature'];
+    if (!cryptopay.verifyWebhook(req.body, signature)) {
+      console.warn('[CryptoPay] Invalid webhook signature');
+      return res.status(400).send('Invalid signature');
+    }
 
-    const tx = await queryOne('SELECT * FROM transactions WHERE gateway_order_id = $1', [order_id]);
+    const { update_type, payload: invoiceData } = req.body;
+    if (update_type !== 'invoice_paid') return res.send('ok');
+
+    // payload — наш orderId который мы передали при создании
+    const orderId = invoiceData?.payload;
+    if (!orderId) return res.send('ok');
+
+    const tx = await queryOne('SELECT * FROM transactions WHERE gateway_order_id = $1', [orderId]);
     if (!tx || tx.status === 'completed') return res.send('ok');
 
     await creditUser(tx);
     res.send('ok');
   } catch (e) {
-    console.error('CryptoCloud webhook error:', e);
+    console.error('CryptoPay webhook error:', e);
     res.status(500).send('error');
   }
 });
