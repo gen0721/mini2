@@ -597,33 +597,124 @@ async function weeklyForecast() {
 
 async function handleUserQuestion(telegramId, question) {
   try {
+    const isOwner = String(telegramId) === String(process.env.REPORT_CHAT_ID);
+
+    // Получаем данные пользователя который пишет
     const user = await queryOne(
-      `SELECT username, balance, total_sales, total_purchases FROM users WHERE telegram_id=$1`,
+      `SELECT username, balance, total_sales, total_purchases, rating, is_banned
+       FROM users WHERE telegram_id=$1`,
       [String(telegramId)]
     );
-    const ctx = user
-      ? `Пользователь: @${user.username}, баланс: $${parseFloat(user.balance).toFixed(2)}, продаж: ${user.total_sales}, покупок: ${user.total_purchases}\n\n`
-      : '';
 
-    // Уведомляем тебя о каждом входящем вопросе
+    // Уведомляем тебя о каждом вопросе
     await tg(process.env.REPORT_CHAT_ID,
-      `💬 <b>Вопрос пользователя</b>\n\n👤 ${user ? '@' + user.username : `TG:${telegramId}`}\n❓ ${question}`
+      `💬 <b>${isOwner ? '👑 Ты спрашиваешь' : 'Вопрос пользователя'}</b>\n\n` +
+      `👤 ${user ? '@' + user.username : 'TG:' + telegramId}\n` +
+      `❓ ${question}`
     );
 
-    const answer = await askClaude(
-      `Ты дружелюбный помощник игрового маркетплейса Minions Market. Отвечай кратко по-русски.
+    let systemPrompt, userContext;
 
-О платформе: продажа игровых товаров, комиссия 5%, безопасные сделки через эскроу, автозавершение 72ч, пополнение через Rukassa и CryptoCloud.
-Регистрация: /code [логин] | Сброс пароля: /reset [логин]
+    if (isOwner) {
+      // ── ХОЗЯИН — полный доступ к данным сайта ────────────────────────────
+      // Собираем статистику сайта для контекста
+      const now   = Math.floor(Date.now() / 1000);
+      const h24   = now - 86400;
 
-Если вопрос о конкретной сделке — скажи писать в чат сделки на сайте.
-Максимум 3-4 предложения.`,
-      ctx + `Вопрос: ${question}`, 400
-    );
+      const [siteStats, recentDeals, topProducts] = await Promise.all([
+        queryOne(`
+          SELECT
+            (SELECT COUNT(*) FROM users WHERE password IS NOT NULL) as total_users,
+            (SELECT COUNT(*) FROM users WHERE created_at >= $1) as new_users_24h,
+            (SELECT COUNT(*) FROM products WHERE status='active') as active_products,
+            (SELECT COUNT(*) FROM deals WHERE status='active') as active_deals,
+            (SELECT COUNT(*) FROM deals WHERE status='disputed') as disputes,
+            (SELECT COALESCE(SUM(amount),0) FROM transactions WHERE type='commission' AND status='completed' AND created_at >= $1) as revenue_24h,
+            (SELECT COALESCE(SUM(amount),0) FROM transactions WHERE type='commission' AND status='completed') as revenue_total
+        `, [h24]),
+        queryAll(`
+          SELECT d.id, d.status, d.amount, p.title as product, b.username as buyer, s.username as seller
+          FROM deals d
+          LEFT JOIN products p ON p.id=d.product_id
+          LEFT JOIN users b ON b.id=d.buyer_id
+          LEFT JOIN users s ON s.id=d.seller_id
+          WHERE d.created_at >= $1
+          ORDER BY d.created_at DESC LIMIT 5
+        `, [h24]),
+        queryAll(`SELECT title, price, views, status FROM products WHERE status='active' ORDER BY views DESC LIMIT 5`),
+      ]);
 
-    // Уведомляем тебя об ответе ИИ
+      userContext = `
+ДАННЫЕ САЙТА (актуальные):
+- Всего пользователей: ${siteStats.total_users}
+- Новых за 24ч: ${siteStats.new_users_24h}
+- Активных товаров: ${siteStats.active_products}
+- Активных сделок: ${siteStats.active_deals}
+- Открытых споров: ${siteStats.disputes}
+- Доход за 24ч: $${parseFloat(siteStats.revenue_24h).toFixed(2)}
+- Доход всего: $${parseFloat(siteStats.revenue_total).toFixed(2)}
+
+Последние сделки (24ч):
+${recentDeals.map(d => `- ${d.product} | @${d.buyer}→@${d.seller} | $${d.amount} | ${d.status}`).join('\n') || 'нет'}
+
+Топ товары по просмотрам:
+${topProducts.map(p => `- ${p.title} | $${p.price} | ${p.views} просмотров`).join('\n') || 'нет'}
+
+Вопрос хозяина: ${question}`;
+
+      systemPrompt = `Ты персональный AI-ассистент хозяина маркетплейса Minions Market.
+Общайся свободно, отвечай развёрнуто на русском языке.
+У тебя есть доступ к актуальной статистике сайта — используй её в ответах.
+
+Можешь обсуждать:
+- Статистику и аналитику сайта
+- Технические вопросы о работе сайта
+- Советы по улучшению платформы
+- Стратегию развития бизнеса
+- Вопросы по пользователям и сделкам (общая информация)
+- Любые вопросы связанные с управлением сайтом
+
+Если вопрос вообще не связан с сайтом или бизнесом — вежливо скажи что ты специализируешься на вопросах маркетплейса.`;
+
+    } else {
+      // ── ОБЫЧНЫЙ ПОЛЬЗОВАТЕЛЬ — только его данные и публичная информация ──
+      const userCtx = user
+        ? `Данные пользователя который пишет:
+- Логин: @${user.username}
+- Баланс: $${parseFloat(user.balance).toFixed(2)}
+- Продаж: ${user.total_sales}
+- Покупок: ${user.total_purchases}
+- Рейтинг: ${user.rating}`
+        : 'Пользователь не зарегистрирован на сайте';
+
+      userContext = `${userCtx}\n\nВопрос: ${question}`;
+
+      systemPrompt = `Ты дружелюбный помощник маркетплейса Minions Market. Отвечай на русском языке.
+
+СТРОГИЕ ПРАВИЛА:
+1. Можешь показывать ТОЛЬКО данные того пользователя который пишет (его баланс, его сделки, его товары)
+2. НИКОГДА не раскрывай данные других пользователей (балансы, сделки, личную информацию)
+3. Если спрашивают о балансе/данных другого юзера — отказывай: "Я не могу показывать данные других пользователей"
+
+Отвечай ТОЛЬКО на вопросы по теме сайта:
+- Как работает платформа, комиссии, правила
+- Данные самого пользователя (его баланс, продажи, покупки)
+- Как купить/продать товар, как открыть спор
+- Техническая помощь по сайту
+- Наличие товаров (только публичная информация о категориях)
+
+Если вопрос НЕ по теме сайта — отвечай: "Я отвечаю только на вопросы о маркетплейсе Minions Market. Чем могу помочь по сайту?"
+
+О платформе: игровые товары, комиссия 5%, эскроу, автозавершение 72ч, пополнение RuKassa/CryptoPay.
+Команды: /code [логин] — регистрация | /reset [логин] — сброс пароля
+Максимум 4 предложения.`;
+    }
+
+    const answer = await askClaude(systemPrompt, userContext, isOwner ? 800 : 400);
+
+    // Уведомляем тебя об ответе
     await tg(process.env.REPORT_CHAT_ID,
-      `🤖 <b>AI ответил</b>\n\n👤 ${user ? '@' + user.username : `TG:${telegramId}`}\n💬 ${answer}`
+      `🤖 <b>AI ответил</b>\n\n👤 ${user ? '@' + user.username : 'TG:' + telegramId}\n💬 ${answer.slice(0, 200)}${answer.length > 200 ? '...' : ''}`
     );
 
     return answer;
