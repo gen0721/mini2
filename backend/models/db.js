@@ -202,6 +202,18 @@ async function initSchema() {
       created_at  BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT
     );
 
+    CREATE TABLE IF NOT EXISTS messages (
+      id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      sender_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      receiver_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      text        TEXT NOT NULL,
+      is_read     INTEGER DEFAULT 0,
+      created_at  BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_messages_sender   ON messages(sender_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id, is_read, created_at DESC);
+
     CREATE INDEX IF NOT EXISTS idx_products_category  ON products(category, status, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_products_seller    ON products(seller_id, status);
     CREATE INDEX IF NOT EXISTS idx_products_status    ON products(status, created_at DESC);
