@@ -30,7 +30,7 @@ export default function ProductPage() {
   }
 
   if (loading) return (
-    <div style={{ maxWidth:900, margin:'0 auto', padding:'32px 20px' }}>
+    <div style={{ maxWidth:900, margin:'0 auto', padding:'24px 12px' }}>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
         <div className="skel" style={{ height:380 }}/>
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
@@ -47,7 +47,7 @@ export default function ProductPage() {
   const isMine = user && String(seller?._id || seller?.id) === (user._id || user.id)
 
   return (
-    <div style={{ maxWidth:940, margin:'0 auto', padding:'32px 20px' }}>
+    <div style={{ maxWidth:940, margin:'0 auto', padding:'24px 12px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:20, fontSize:13, color:'var(--t3)' }}>
         <Link to="/">Главная</Link> <span>/</span>
         <Link to="/catalog">Каталог</Link> <span>/</span>
