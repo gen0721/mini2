@@ -269,6 +269,99 @@ async function handleUpdate(update) {
     return;
   }
 
+  // /partner — стать партнёром
+  if (text === '/partner') {
+    const user = await queryOne('SELECT * FROM users WHERE telegram_id=$1', [String(chatId)]).catch(() => null);
+    if (!user) {
+      await sendMessage(chatId, '❌ Сначала зарегистрируйтесь на сайте.\n/code [логин] — для регистрации');
+      return;
+    }
+    if (user.is_partner) {
+      const base = process.env.FRONTEND_URL || process.env.BACKEND_URL || '';
+      await sendMessage(chatId,
+        '✅ <b>Вы уже партнёр!</b>\n\n' +
+        '🔗 Ваша ссылка:\n<code>' + base + '?ref=' + user.ref_code + '</code>\n\n' +
+        '💰 Ваш процент: <b>' + user.partner_percent + '%</b> с каждой сделки реферала\n\n' +
+        '/refstats — статистика рефералов'
+      );
+      return;
+    }
+    const percent = parseInt(process.env.PARTNER_PERCENT || '10');
+    await sendMessage(chatId,
+      '🤝 <b>Партнёрская программа Minions Market</b>\n\n' +
+      'Условия сотрудничества:\n\n' +
+      '• Вы получаете <b>' + percent + '%</b> с каждой завершённой сделки ваших рефералов\n' +
+      '• Вознаграждение начисляется автоматически на баланс\n' +
+      '• Вывод через CryptoBot в USDT\n' +
+      '• Статистика в реальном времени через /refstats\n\n' +
+      'Для подтверждения напишите: <b>/joinpartner да</b>'
+    );
+    return;
+  }
+
+  // /joinpartner да — подтверждение партнёрства
+  if (text.toLowerCase().startsWith('/joinpartner')) {
+    const confirm = text.split(/\s+/)[1]?.toLowerCase();
+    if (confirm !== 'да') {
+      await sendMessage(chatId, '❗ Для подтверждения напишите: /joinpartner да');
+      return;
+    }
+    const user = await queryOne('SELECT * FROM users WHERE telegram_id=$1', [String(chatId)]).catch(() => null);
+    if (!user) { await sendMessage(chatId, '❌ Сначала зарегистрируйтесь на сайте.'); return; }
+    if (user.is_partner) { await sendMessage(chatId, '✅ Вы уже партнёр!'); return; }
+
+    // Генерируем уникальный реф код
+    const refCode = user.username + '_' + Math.random().toString(36).slice(2, 6).toUpperCase();
+    const percent = parseInt(process.env.PARTNER_PERCENT || '10');
+    await run('UPDATE users SET is_partner=1, ref_code=$1, partner_percent=$2 WHERE id=$3',
+      [refCode, percent, user.id]);
+
+    const base = process.env.FRONTEND_URL || process.env.BACKEND_URL || '';
+    const refLink = base + '?ref=' + refCode;
+
+    // Уведомляем тебя
+    if (process.env.REPORT_CHAT_ID) {
+      sendMessage(process.env.REPORT_CHAT_ID,
+        '🤝 <b>Новый партнёр!</b>\n\n@' + user.username + '\nКод: ' + refCode + '\nПроцент: ' + percent + '%'
+      ).catch(() => {});
+    }
+
+    await sendMessage(chatId,
+      '🎉 <b>Добро пожаловать в партнёрскую программу!</b>\n\n' +
+      '🔗 Ваша реферальная ссылка:\n<code>' + refLink + '</code>\n\n' +
+      '💰 Ваш процент: <b>' + percent + '%</b> с каждой сделки\n\n' +
+      'Поделитесь ссылкой — и зарабатывайте автоматически!\n\n' +
+      '/refstats — ваша статистика'
+    );
+    return;
+  }
+
+  // /refstats — статистика рефералов
+  if (text === '/refstats') {
+    const user = await queryOne('SELECT * FROM users WHERE telegram_id=$1', [String(chatId)]).catch(() => null);
+    if (!user || !user.is_partner) {
+      await sendMessage(chatId, '❌ Вы не являетесь партнёром.\n/partner — узнать об условиях');
+      return;
+    }
+    const referred = await queryOne('SELECT COUNT(*) as c FROM users WHERE ref_by=$1', [user.ref_code]).catch(() => ({c:0}));
+    const earned   = await queryOne('SELECT COALESCE(SUM(amount),0) as t FROM referral_rewards WHERE partner_id=$1', [user.id]).catch(() => ({t:0}));
+    const lastRewards = await queryAll('SELECT amount, created_at FROM referral_rewards WHERE partner_id=$1 ORDER BY created_at DESC LIMIT 5', [user.id]).catch(() => []);
+
+    const base = process.env.FRONTEND_URL || process.env.BACKEND_URL || '';
+    await sendMessage(chatId,
+      '📊 <b>Ваша статистика</b>\n\n' +
+      '🔗 Ссылка: <code>' + base + '?ref=' + user.ref_code + '</code>\n' +
+      '👥 Зарегистрировалось: <b>' + referred.c + '</b> человек\n' +
+      '💰 Заработано всего: <b>$' + parseFloat(earned.t).toFixed(2) + '</b>\n' +
+      '💳 Баланс: <b>$' + parseFloat(user.balance || 0).toFixed(2) + '</b>\n' +
+      '📈 Ваш процент: <b>' + user.partner_percent + '%</b>\n\n' +
+      (lastRewards.length > 0
+        ? '🕐 Последние начисления:\n' + lastRewards.map(r => '  +$' + parseFloat(r.amount).toFixed(2) + ' · ' + new Date(r.created_at * 1000).toLocaleDateString('ru')).join('\n')
+        : 'Сделок по рефералам ещё нет.')
+    );
+    return;
+  }
+
   // ── Свободный чат с AI ────────────────────────────────────────────────────
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
