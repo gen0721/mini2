@@ -7,28 +7,94 @@ const notify   = require('../utils/notify');
 const { completeDeal } = require('./deals');
 const { sanitizeUser } = require('./auth');
 
+// Хранилище заблокированных IP в памяти (сбрасывается при рестарте)
+const blockedIps = new Map(); // ip -> { until, attempts }
+
 router.post('/login', async (req, res) => {
   const { login, password } = req.body;
   const adminLogin    = process.env.ADMIN_LOGIN?.trim();
   const adminPassword = process.env.ADMIN_PASSWORD?.trim();
+  const ip = getIp(req);
 
-  // Если переменные не заданы — вход ЗАПРЕЩЁН (защита от дефолтных паролей)
+  // Если переменные не заданы — вход ЗАПРЕЩЁН
   if (!adminLogin || !adminPassword) {
     console.error('SECURITY: ADMIN_LOGIN or ADMIN_PASSWORD not set in environment!');
     return res.status(503).json({ error: 'Панель администратора не настроена' });
   }
 
-  // Защита от брутфорса — искусственная задержка
-  await new Promise(r => setTimeout(r, 500));
+  // Проверяем блокировку IP
+  const block = blockedIps.get(ip);
+  if (block && block.until > Date.now()) {
+    const minsLeft = Math.ceil((block.until - Date.now()) / 60000);
+    console.warn(`SECURITY: Blocked IP ${ip} tried admin login (${minsLeft} min left)`);
+    // Уведомляем админа
+    try {
+      const { sendTg } = require('../utils/notify');
+      if (process.env.REPORT_CHAT_ID) {
+        await sendTg(process.env.REPORT_CHAT_ID,
+          `🚨 <b>Заблокированный IP пытается войти!</b>\n\nIP: <code>${ip}</code>\nЛогин: <code>${String(login||'').slice(0,50)}</code>\nОсталось: ${minsLeft} мин`
+        );
+      }
+    } catch(e) {}
+    return res.status(429).json({ error: `Слишком много попыток. Подождите ${minsLeft} минут.` });
+  }
+
+  // Задержка от брутфорса
+  await new Promise(r => setTimeout(r, 800));
 
   if ((login||'').trim() !== adminLogin || (password||'').trim() !== adminPassword) {
-    console.warn(`SECURITY: Failed admin login attempt for "${login}" from ${req.ip}`);
+    console.warn(`SECURITY: Failed admin login attempt for "${login}" from ${ip}`);
     await log(EVENTS.ADMIN_LOGIN_FAIL, req, { username: login });
+
+    // Считаем неудачные попытки с этого IP за последние 10 минут
+    const since = Math.floor(Date.now() / 1000) - 600;
+    const { queryOne: qOne } = require('../models/db');
+    const attempts = await qOne(
+      `SELECT COUNT(*) as c FROM security_logs WHERE ip=$1 AND event='admin_login_fail' AND created_at>=$2`,
+      [ip, since]
+    ).catch(() => ({ c: 0 }));
+
+    const count = parseInt(attempts.c) || 0;
+
+    // После 5 попыток — блокируем IP на 30 минут
+    if (count >= 4) {
+      const blockUntil = Date.now() + 30 * 60 * 1000;
+      blockedIps.set(ip, { until: blockUntil, attempts: count + 1 });
+
+      console.error(`SECURITY: IP ${ip} BLOCKED for 30 min after ${count + 1} failed admin login attempts`);
+
+      // Уведомляем тебя в Telegram
+      try {
+        const { sendTg } = require('../utils/notify');
+        if (process.env.REPORT_CHAT_ID) {
+          await sendTg(process.env.REPORT_CHAT_ID,
+            `🔴 <b>IP заблокирован!</b>\n\nIP: <code>${ip}</code>\nПопыток: <b>${count + 1}</b>\nПоследний логин: <code>${String(login||'').slice(0,100)}</code>\nЗаблокирован на <b>30 минут</b>\n\n⚠️ Возможная атака на админку!`
+          );
+        }
+      } catch(e) {}
+
+      return res.status(429).json({ error: 'Слишком много попыток. IP заблокирован на 30 минут.' });
+    }
+
+    // Предупреждаем если попыток уже 3+
+    if (count >= 2) {
+      try {
+        const { sendTg } = require('../utils/notify');
+        if (process.env.REPORT_CHAT_ID) {
+          await sendTg(process.env.REPORT_CHAT_ID,
+            `⚠️ <b>Подозрительная активность!</b>\n\nIP: <code>${ip}</code>\nПопытка #${count + 1} войти в админку\nЛогин: <code>${String(login||'').slice(0,100)}</code>`
+          );
+        }
+      } catch(e) {}
+    }
+
     return res.status(401).json({ error: 'Неверные данные' });
   }
 
-  console.log(`Admin login successful from ${req.ip}`);
-  await log(EVENTS.ADMIN_LOGIN_OK, req, { username: login, details: { ip: getIp(req) } });
+  // Успешный вход — сбрасываем счётчик этого IP
+  blockedIps.delete(ip);
+  console.log(`Admin login successful from ${ip}`);
+  await log(EVENTS.ADMIN_LOGIN_OK, req, { username: login, details: { ip } });
   res.json({ token: generateAdminToken() });
 });
 
