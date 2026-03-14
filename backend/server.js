@@ -167,6 +167,7 @@ app.use('/api/wallet',     require('./routes/wallet'));
 app.use('/api/users',      require('./routes/users'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/admin',      require('./routes/admin'));
+app.use('/api/referral',   require('./routes/referral'));
 app.use('/api/messages',   require('./routes/messages'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
@@ -239,6 +240,22 @@ initSchema()
     // Миграция колонок для AI Admin (выполняется автоматически при каждом старте)
     await run(`ALTER TABLE products ADD COLUMN IF NOT EXISTS ai_moderated    INTEGER DEFAULT 0`).catch(() => {});
     await run(`ALTER TABLE users    ADD COLUMN IF NOT EXISTS seller_level    TEXT DEFAULT 'newcomer'`).catch(() => {});
+    await run(`ALTER TABLE users    ADD COLUMN IF NOT EXISTS level_override   INTEGER DEFAULT 0`).catch(() => {});
+    // Реферальная система
+    await run(`ALTER TABLE users    ADD COLUMN IF NOT EXISTS ref_code         TEXT DEFAULT NULL`).catch(() => {});
+    await run(`ALTER TABLE users    ADD COLUMN IF NOT EXISTS ref_by           TEXT DEFAULT NULL`).catch(() => {});
+    await run(`ALTER TABLE users    ADD COLUMN IF NOT EXISTS is_partner       INTEGER DEFAULT 0`).catch(() => {});
+    await run(`ALTER TABLE users    ADD COLUMN IF NOT EXISTS partner_percent  INTEGER DEFAULT 5`).catch(() => {});
+    await run(`ALTER TABLE users    ADD COLUMN IF NOT EXISTS partner_earned   REAL DEFAULT 0`).catch(() => {});
+    await run(`CREATE TABLE IF NOT EXISTS referral_rewards (
+      id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      partner_id TEXT REFERENCES users(id),
+      referred_user_id TEXT REFERENCES users(id),
+      deal_id TEXT,
+      amount REAL DEFAULT 0,
+      created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT
+    )`).catch(() => {});
+    await run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_ref_code ON users(ref_code) WHERE ref_code IS NOT NULL`).catch(() => {});
     await run(`ALTER TABLE users    ADD COLUMN IF NOT EXISTS level_override  INTEGER DEFAULT 0`).catch(() => {});
     await run(`ALTER TABLE products ADD COLUMN IF NOT EXISTS ai_price_advised INTEGER DEFAULT 0`).catch(() => {});
     await run(`ALTER TABLE users    ADD COLUMN IF NOT EXISTS ai_reactivated   INTEGER DEFAULT 0`).catch(() => {});
