@@ -126,12 +126,17 @@ app.use('/api/auth/', rateLimit({ windowMs: 15 * 60 * 1000, max: 30 }));
 app.use('/api/wallet/deposit', rateLimit({ windowMs: 60 * 1000, max: 10 }));
 
 // ── Верификация домена для платёжных систем ──────────────────────────────────
-// LAVA верификация — добавь LAVA_VERIFY_TOKEN на Railway
-app.get('/lava-verify*', (req, res) => {
-  const token = process.env.LAVA_VERIFY_TOKEN || '';
-  if (!token) return res.status(404).send('Not found');
-  res.setHeader('Content-Type', 'text/html');
-  res.send(`<html><body>${token}</body></html>`);
+// LAVA — файл должен отдавать точное содержимое
+// Добавь на Railway: LAVA_VERIFY_FILENAME и LAVA_VERIFY_TOKEN
+// LAVA_VERIFY_FILENAME = lava-verify_5aca865c86121489.html
+// LAVA_VERIFY_TOKEN = lava-verify_5aca865c86121489
+app.get('/:file([a-z0-9_\-]+\.html)', (req, res) => {
+  const filename = req.params.file;
+  const expected = process.env.LAVA_VERIFY_FILENAME || '';
+  const token    = process.env.LAVA_VERIFY_TOKEN    || '';
+  if (!expected || !token || filename !== expected) return res.status(404).send('Not found');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(token);
 });
 
 // ── Routes ─────────────────────────────────────────────────────────────────────
