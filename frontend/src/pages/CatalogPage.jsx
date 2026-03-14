@@ -76,7 +76,7 @@ export default function CatalogPage() {
       </div>
 
       {/* Контент поверх */}
-      <div style={{ position:'relative', zIndex:1, maxWidth:1200, margin:'0 auto', padding:'32px 20px' }}>
+      <div style={{ position:'relative', zIndex:1, maxWidth:1200, margin:'0 auto', padding:'24px 12px' }}>
       <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:32, marginBottom:24 }}>Каталог</h1>
 
       <div style={{ display:'flex', gap:10, marginBottom:24 }}>
