@@ -113,6 +113,7 @@ export const SlidersHorizontal = svg('<line x1="21" y1="4" x2="14" y2="4"/><line
 
 // Универсальный компонент по имени
 const Truck    = svg('<rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>')
+const ImageIcon = svg('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>')
 const BookOpen = svg('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>')
 
 const ICONS = {
@@ -144,7 +145,9 @@ const ICONS = {
   truck: Truck, book: BookOpen,
 }
 
-export { Truck, BookOpen };
+const Camera = svg('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>')
+
+export { Truck, BookOpen, Camera };
 
 export default function Icon({ name, size = 18, color = 'currentColor', strokeWidth = 1.75, style = {}, className = '' }) {
   const Component = ICONS[name]
