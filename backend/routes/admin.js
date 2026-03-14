@@ -468,6 +468,39 @@ router.post('/users/recalc-levels', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── GET /admin/partners — список партнёров ───────────────────────────────────
+router.get('/partners', async (req, res) => {
+  try {
+    const partners = await queryAll(`
+      SELECT u.id, u.username, u.partner_percent, u.partner_earned, u.ref_code, u.balance,
+        (SELECT COUNT(*) FROM users r WHERE r.ref_by = u.ref_code) as referred_count,
+        (SELECT COALESCE(SUM(amount),0) FROM referral_rewards rr WHERE rr.partner_id = u.id) as total_rewards
+      FROM users u WHERE u.is_partner = 1
+      ORDER BY total_rewards DESC
+    `);
+    res.json(partners);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── POST /admin/partners/:id/set-percent — изменить процент партнёра ──────────
+router.post('/partners/:id/set-percent', async (req, res) => {
+  try {
+    const { percent } = req.body;
+    const p = parseInt(percent);
+    if (isNaN(p) || p < 1 || p > 50) return res.status(400).json({ error: 'Процент 1-50' });
+    await run('UPDATE users SET partner_percent=$1 WHERE id=$2', [p, req.params.id]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── POST /admin/partners/:id/remove — убрать партнёра ────────────────────────
+router.post('/partners/:id/remove', async (req, res) => {
+  try {
+    await run('UPDATE users SET is_partner=0, ref_code=NULL WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── GET /admin/chats — все диалоги пользователей ─────────────────────────────
 router.get('/chats', async (req, res) => {
   try {
