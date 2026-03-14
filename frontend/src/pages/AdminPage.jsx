@@ -110,6 +110,7 @@ export default function AdminPage() {
   const [settings, setSettings] = useState(null)
   const [aiEnabled, setAiEnabled] = useState(true)
   const [chats, setChats]           = useState([])
+  const [partners, setPartners]     = useState([])
   const [chatSearch, setChatSearch] = useState('')
   const [openChat, setOpenChat]     = useState(null) // { user1, user2, messages }
   const [chatLoading, setChatLoading] = useState(false)
@@ -139,6 +140,9 @@ export default function AdminPage() {
       } else if (t === 'settings') {
         const res = await adminApi.get('/settings')
         if (res && !res.error) setSettings(res)
+      } else if (t === 'partners') {
+        const res = await adminApi.get('/partners')
+        setPartners(Array.isArray(res) ? res : [])
       } else if (t === 'chats') {
         const res = await adminApi.get('/chats')
         setChats(Array.isArray(res) ? res : [])
@@ -300,6 +304,7 @@ export default function AdminPage() {
     ['broadcast',    <Send size={14}/>,           'Рассылка'],
     ['messages',     <MessageCircle size={14}/>, 'Сообщения'],
     ['chats',        <MessageCircle size={14}/>, 'Чаты юзеров'],
+    ['partners',     <DollarSign size={14}/>,    'Партнёры'],
     ['settings',     <Settings size={14}/>,      'Настройки'],
   ]
 
@@ -735,6 +740,61 @@ export default function AdminPage() {
                 <Send size={14}/> Отправить
               </button>
             </div>
+          </div>
+        )}
+
+        {/* ── ПАРТНЁРЫ ── */}
+        {tab === 'partners' && !loading && (
+          <div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:10 }}>
+              <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:18 }}>🤝 Партнёрская программа</h2>
+              <div style={{ fontSize:13, color:'var(--t3)' }}>
+                Дефолтный процент: <b style={{color:'var(--accent)'}}>{process.env.PARTNER_PERCENT || 10}%</b>
+              </div>
+            </div>
+
+            {partners.length === 0 ? (
+              <div style={{ textAlign:'center', padding:40, color:'var(--t3)' }}>
+                <div style={{ fontSize:32, marginBottom:12 }}>🤝</div>
+                <div style={{ fontFamily:'var(--font-h)', fontWeight:700 }}>Партнёров пока нет</div>
+                <div style={{ fontSize:13, marginTop:8 }}>Блогеры могут стать партнёрами через /partner в боте</div>
+              </div>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {partners.map(p => (
+                  <div key={p.id} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:14, padding:'16px 18px' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+                      <div style={{ width:40, height:40, borderRadius:10, background:'linear-gradient(135deg,var(--purple),var(--accent))', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:700, flexShrink:0 }}>
+                        {(p.username||'?')[0].toUpperCase()}
+                      </div>
+                      <div style={{ flex:1, minWidth:100 }}>
+                        <div style={{ fontWeight:700, fontSize:14 }}>@{p.username}</div>
+                        <div style={{ fontSize:12, color:'var(--t3)', marginTop:2 }}>
+                          👥 {p.referred_count} рефералов · 💰 ${parseFloat(p.total_rewards||0).toFixed(2)} заработано · Баланс: ${parseFloat(p.balance||0).toFixed(2)}
+                        </div>
+                        <div style={{ fontSize:11, color:'var(--t4)', marginTop:2 }}>
+                          Код: <code style={{color:'var(--accent)'}}>{p.ref_code}</code>
+                        </div>
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <span style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:18, color:'var(--green)' }}>{p.partner_percent}%</span>
+                        <button className="btn btn-sm btn-secondary" onClick={async () => {
+                          const pct = window.prompt('Новый процент (1-50):', p.partner_percent)
+                          if (!pct) return
+                          const r = await adminApi.post(`/partners/${p.id}/set-percent`, { percent: parseInt(pct) })
+                          r.ok ? (toast.success('Процент обновлён'), loadTab('partners')) : toast.error(r.error)
+                        }}>✏️</button>
+                        <button className="btn btn-sm btn-danger" onClick={async () => {
+                          if (!window.confirm('Убрать партнёра?')) return
+                          const r = await adminApi.post(`/partners/${p.id}/remove`, {})
+                          r.ok ? (toast.success('Убран'), loadTab('partners')) : toast.error(r.error)
+                        }}>✕</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
