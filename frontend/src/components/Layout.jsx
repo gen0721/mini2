@@ -71,7 +71,7 @@ export default function Layout({ children }) {
         background: scrolled ? 'rgba(13,13,20,0.97)' : 'rgba(13,13,20,0.7)',
         backdropFilter: 'blur(24px)',
         borderBottom: `1px solid ${scrolled ? 'rgba(255,255,255,0.08)' : 'transparent'}`,
-        transition: 'all 0.3s', padding: '0 20px',
+        transition: 'all 0.3s', padding: '0 max(12px, env(safe-area-inset-left))',
       }}>
         <div style={{ maxWidth:1200, margin:'0 auto', height:64, display:'flex', alignItems:'center', gap:12 }}>
 
@@ -415,6 +415,8 @@ export default function Layout({ children }) {
           .mobile-bottom-nav { display: flex !important; }
           .desktop-footer { display: none !important; }
           .mobile-footer  { display: block !important; }
+          header { padding-left: 12px !important; padding-right: 12px !important; }
+          header > div { padding: 0 !important; }
         }
         @media (min-width: 769px) {
           .mobile-footer  { display: none !important; }
