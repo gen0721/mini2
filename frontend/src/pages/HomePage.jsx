@@ -1,4 +1,5 @@
 import RotatingText from '../components/RotatingText/RotatingText'
+import useMeta from '../hooks/useMeta'
 import { ShieldCheck, Zap, Handshake, Layers, Gamepad2, Coins, Sword, Palette, KeyRound, Star, Rocket, Package, Box, LayoutGrid } from '../components/Icon'
 import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
@@ -398,7 +399,13 @@ const CATEGORIES = [
 export default function HomePage() {
   const [products, setProducts] = useState([])
   const [loading, setLoading]   = useState(true)
-  const { user } = useStore()
+  const {
+  useMeta({
+    title: 'Minions Market — Купить и продать игровые аккаунты, валюту, скины',
+    description: 'Безопасный маркетплейс игровых товаров. Покупай аккаунты, валюту, предметы и скины с гарантом. Защита каждой сделки через эскроу.',
+    keywords: 'купить игровой аккаунт, продать аккаунт, игровая валюта, скины, маркетплейс игр',
+  })
+ user } = useStore()
 
   useEffect(() => {
     api.get('/products?limit=8&sort=newest')
