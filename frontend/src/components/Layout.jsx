@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { Wallet, Handshake, FileText, RotateCcw, Mail, Zap, UserCircle, LogOut, Settings, Home, LayoutGrid, Plus, DollarSign, ShieldCheck } from './Icon'
+import { Wallet, Handshake, FileText, RotateCcw, Mail, Zap, UserCircle, LogOut, Settings, Home, LayoutGrid, Plus, DollarSign, ShieldCheck, MessageCircle } from './Icon'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useStore, api } from '../store'
 
@@ -7,7 +7,8 @@ import { useStore, api } from '../store'
 const IconHome    = () => <Home size={22} strokeWidth={1.75}/>
 const IconGrid    = () => <LayoutGrid size={22} strokeWidth={1.75}/>
 const IconPlus    = () => <Plus size={24} strokeWidth={2}/>
-const IconDeals   = () => <Handshake size={22} strokeWidth={1.75}/>
+const IconDeals    = () => <Handshake size={22} strokeWidth={1.75}/>
+const IconMessages = () => <MessageCircle size={22} strokeWidth={1.75}/>
 const IconProfile = () => <UserCircle size={22} strokeWidth={1.75}/>
 
 export default function Layout({ children }) {
@@ -371,7 +372,8 @@ export default function Layout({ children }) {
           { to:'/',        icon:<IconHome/>,    label:'Главная' },
           { to:'/catalog', icon:<IconGrid/>,    label:'Каталог' },
           { to:'/sell',    icon:<IconPlus/>,    label:'Продать', center:true },
-          { to:'/deals',   icon:<IconDeals/>,   label:'Сделки' },
+          { to:'/deals',    icon:<IconDeals/>,    label:'Сделки' },
+          { to:'/messages', icon:<IconMessages/>, label:'Чат' },
           { to: user ? '/profile' : '/auth', icon:<IconProfile/>, label: user ? 'Профиль' : 'Войти' },
         ].map(item => (
           <Link key={item.to} to={item.to} style={{
