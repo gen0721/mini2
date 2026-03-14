@@ -125,6 +125,15 @@ app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders
 app.use('/api/auth/', rateLimit({ windowMs: 15 * 60 * 1000, max: 30 }));
 app.use('/api/wallet/deposit', rateLimit({ windowMs: 60 * 1000, max: 10 }));
 
+// ── Верификация домена для платёжных систем ──────────────────────────────────
+// LAVA верификация — добавь LAVA_VERIFY_TOKEN на Railway
+app.get('/lava-verify*', (req, res) => {
+  const token = process.env.LAVA_VERIFY_TOKEN || '';
+  if (!token) return res.status(404).send('Not found');
+  res.setHeader('Content-Type', 'text/html');
+  res.send(`<html><body>${token}</body></html>`);
+});
+
 // ── Routes ─────────────────────────────────────────────────────────────────────
 app.use('/api/auth',       require('./routes/auth'));
 app.use('/api/products',   require('./routes/products'));
