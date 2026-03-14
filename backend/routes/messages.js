@@ -73,8 +73,10 @@ router.post('/:userId', auth, async (req, res) => {
     const receiverId = req.params.userId;
     const { text }   = req.body;
 
-    if (!text?.trim())        return res.status(400).json({ error: 'Пустое сообщение' });
-    if (text.length > 2000)   return res.status(400).json({ error: 'Слишком длинное' });
+    const { text, image } = req.body;
+    if (!text?.trim() && !image) return res.status(400).json({ error: 'Пустое сообщение' });
+    if (text && text.length > 2000) return res.status(400).json({ error: 'Слишком длинное' });
+    if (image && image.length > 5 * 1024 * 1024) return res.status(400).json({ error: 'Фото слишком большое' });
     if (receiverId === req.userId) return res.status(400).json({ error: 'Нельзя писать себе' });
 
     const receiver = await queryOne('SELECT id, username, telegram_id FROM users WHERE id = $1', [receiverId]);
@@ -84,8 +86,8 @@ router.post('/:userId', auth, async (req, res) => {
 
     const msgId = crypto.randomUUID();
     await run(
-      `INSERT INTO messages (id, sender_id, receiver_id, text) VALUES ($1,$2,$3,$4)`,
-      [msgId, req.userId, receiverId, text.trim()]
+      `INSERT INTO messages (id, sender_id, receiver_id, text, image) VALUES ($1,$2,$3,$4,$5)`,
+      [msgId, req.userId, receiverId, (text || '📷 Фото').trim(), image || null]
     );
 
     const msg = await queryOne('SELECT * FROM messages WHERE id = $1', [msgId]);
