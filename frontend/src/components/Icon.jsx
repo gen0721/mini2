@@ -112,6 +112,9 @@ export const Lightbulb      = svg('<line x1="9" y1="18" x2="15" y2="18"/><line x
 export const SlidersHorizontal = svg('<line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><line x1="14" y1="2" x2="14" y2="6"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="22"/>')
 
 // Универсальный компонент по имени
+const Truck    = svg('<rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>')
+const BookOpen = svg('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>')
+
 const ICONS = {
   home: Home, catalog: LayoutGrid, plus: Plus, sell: Plus,
   profile: UserCircle, wallet: Wallet, deals: Handshake, admin: Zap,
@@ -138,7 +141,10 @@ const ICONS = {
   dispute: AlertCircle, refund: RotateCcw, confirm: CheckCircle,
   deliver: Package, inbox: Inbox, repeat: Repeat,
   flag: Flag, bookmark: Bookmark, trash: Trash2,
+  truck: Truck, book: BookOpen,
 }
+
+export { Truck, BookOpen };
 
 export default function Icon({ name, size = 18, color = 'currentColor', strokeWidth = 1.75, style = {}, className = '' }) {
   const Component = ICONS[name]
