@@ -3,6 +3,7 @@ const crypto = require('crypto');
 
 const SHOP_ID = () => process.env.RUKASSA_SHOP_ID || '';
 const SECRET  = () => process.env.RUKASSA_SECRET  || '';
+const TOKEN   = () => process.env.RUKASSA_TOKEN   || '';
 
 function isConfigured() { return !!(SHOP_ID() && SECRET()); }
 
@@ -51,7 +52,7 @@ async function createInvoice({ amount, orderId, comment = '', hookUrl = '', succ
 
   const body = {
     shop_id:          shopId,
-    token:            secret,       // RuKassa требует token = секретный ключ
+    token:            TOKEN() || secret, // API токен аккаунта
     order_id:         String(orderId),
     amount:           amtStr,
     hash:             hash,
