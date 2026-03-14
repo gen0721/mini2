@@ -147,6 +147,7 @@ app.use('/api/wallet',     require('./routes/wallet'));
 app.use('/api/users',      require('./routes/users'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/admin',      require('./routes/admin'));
+app.use('/api/messages',   require('./routes/messages'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
