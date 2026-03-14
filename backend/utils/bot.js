@@ -51,13 +51,24 @@ function askClaude(system, userMsg) {
       let data = '';
       r.on('data', d => data += d);
       r.on('end', () => {
-        try { resolve(JSON.parse(data)?.content?.[0]?.text || 'Не могу ответить.'); }
-        catch(e) { resolve('Ошибка обработки ответа.'); }
+        try {
+          const json = JSON.parse(data);
+          console.log('[Bot] Claude response status:', r.statusCode, 'body preview:', data.slice(0, 200));
+          if (json.error) {
+            console.error('[Bot] Claude API error:', json.error);
+            resolve('Сервис временно недоступен. Попробуйте позже.');
+          } else {
+            resolve(json?.content?.[0]?.text || 'Не могу ответить.');
+          }
+        } catch(e) {
+          console.error('[Bot] Claude parse error:', e.message, 'raw:', data.slice(0, 200));
+          resolve('Ошибка обработки ответа.');
+        }
       });
-      r.on('error', () => resolve('Ошибка соединения.'));
+      r.on('error', (e) => { console.error('[Bot] Claude response error:', e.message); resolve('Ошибка соединения.'); });
     });
-    req.on('error', () => resolve('Ошибка соединения.'));
-    req.setTimeout(30000, () => { req.destroy(); resolve('Время ожидания истекло.'); });
+    req.on('error', (e) => { console.error('[Bot] Claude request error:', e.message); resolve('Ошибка соединения.'); });
+    req.setTimeout(30000, () => { req.destroy(); console.error('[Bot] Claude timeout'); resolve('Время ожидания истекло.'); });
     req.write(body);
     req.end();
   });
