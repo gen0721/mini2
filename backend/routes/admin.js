@@ -344,6 +344,86 @@ router.post('/users/:id/remove-subadmin', async (req, res) => {
 
 module.exports = router;
 
+// ── GET /admin/stats/detailed — детальная статистика ─────────────────────────
+router.get('/stats/detailed', async (req, res) => {
+  try {
+    const now   = Math.floor(Date.now() / 1000);
+    const d1    = now - 86400;
+    const d7    = now - 604800;
+    const d30   = now - 2592000;
+
+    const [
+      usersToday, usersWeek, usersMonth,
+      dealsToday, dealsWeek, dealsMonth,
+      revenueToday, revenueWeek, revenueMonth,
+      topSellers, topProducts, newUsers,
+      pendingWithdrawals, activeDisputes,
+      dailyStats,
+    ] = await Promise.all([
+      queryOne(`SELECT COUNT(*) as c FROM users WHERE created_at >= $1`, [d1]),
+      queryOne(`SELECT COUNT(*) as c FROM users WHERE created_at >= $1`, [d7]),
+      queryOne(`SELECT COUNT(*) as c FROM users WHERE created_at >= $1`, [d30]),
+      queryOne(`SELECT COUNT(*) as c, COALESCE(SUM(amount),0) as vol FROM deals WHERE created_at >= $1`, [d1]),
+      queryOne(`SELECT COUNT(*) as c, COALESCE(SUM(amount),0) as vol FROM deals WHERE created_at >= $1`, [d7]),
+      queryOne(`SELECT COUNT(*) as c, COALESCE(SUM(amount),0) as vol FROM deals WHERE created_at >= $1`, [d30]),
+      queryOne(`SELECT COALESCE(SUM(amount),0) as t FROM transactions WHERE type='commission' AND status='completed' AND created_at >= $1`, [d1]),
+      queryOne(`SELECT COALESCE(SUM(amount),0) as t FROM transactions WHERE type='commission' AND status='completed' AND created_at >= $1`, [d7]),
+      queryOne(`SELECT COALESCE(SUM(amount),0) as t FROM transactions WHERE type='commission' AND status='completed' AND created_at >= $1`, [d30]),
+      queryAll(`SELECT u.username, u.id, COUNT(d.id) as sales, COALESCE(SUM(d.seller_amount),0) as earned FROM deals d LEFT JOIN users u ON u.id=d.seller_id WHERE d.status='completed' AND d.updated_at >= $1 GROUP BY u.id,u.username ORDER BY sales DESC LIMIT 5`, [d7]),
+      queryAll(`SELECT p.title, p.id, p.views, p.price, COUNT(d.id) as sales FROM products p LEFT JOIN deals d ON d.product_id=p.id AND d.status='completed' GROUP BY p.id,p.title,p.views,p.price ORDER BY sales DESC, p.views DESC LIMIT 5`),
+      queryAll(`SELECT id, username, created_at, total_sales, total_purchases FROM users WHERE password IS NOT NULL ORDER BY created_at DESC LIMIT 10`),
+      queryOne(`SELECT COUNT(*) as c, COALESCE(SUM(amount),0) as vol FROM transactions WHERE type='withdrawal' AND status='pending'`),
+      queryOne(`SELECT COUNT(*) as c FROM deals WHERE status='disputed'`),
+      queryAll(`SELECT TO_CHAR(TO_TIMESTAMP(created_at),'YYYY-MM-DD') as day, COUNT(*) as deals, COALESCE(SUM(amount),0) as vol FROM deals WHERE created_at >= $1 GROUP BY day ORDER BY day ASC`, [d30]),
+    ]);
+
+    res.json({
+      users:    { today: parseInt(usersToday.c), week: parseInt(usersWeek.c), month: parseInt(usersMonth.c) },
+      deals:    { today: parseInt(dealsToday.c), todayVol: parseFloat(dealsToday.vol), week: parseInt(dealsWeek.c), weekVol: parseFloat(dealsWeek.vol), month: parseInt(dealsMonth.c), monthVol: parseFloat(dealsMonth.vol) },
+      revenue:  { today: parseFloat(revenueToday.t), week: parseFloat(revenueWeek.t), month: parseFloat(revenueMonth.t) },
+      topSellers: topSellers.map(s => ({ ...s, sales: parseInt(s.sales), earned: parseFloat(s.earned) })),
+      topProducts: topProducts.map(p => ({ ...p, sales: parseInt(p.sales), views: parseInt(p.views) })),
+      newUsers: newUsers.map(u => ({ id: u.id, username: u.username, created_at: u.created_at, total_sales: u.total_sales, total_purchases: u.total_purchases })),
+      pendingWithdrawals: { count: parseInt(pendingWithdrawals.c), vol: parseFloat(pendingWithdrawals.vol) },
+      activeDisputes: parseInt(activeDisputes.c),
+      dailyStats,
+    });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Ошибка' }); }
+});
+
+// ── POST /admin/broadcast — массовая рассылка ─────────────────────────────────
+router.post('/broadcast', async (req, res) => {
+  try {
+    const { text, filter } = req.body; // filter: 'all' | 'buyers' | 'sellers' | 'verified'
+    if (!text?.trim()) return res.status(400).json({ error: 'Введите текст' });
+
+    let users;
+    if (filter === 'buyers')   users = await queryAll(`SELECT telegram_id FROM users WHERE telegram_id IS NOT NULL AND total_purchases > 0`);
+    else if (filter === 'sellers') users = await queryAll(`SELECT telegram_id FROM users WHERE telegram_id IS NOT NULL AND total_sales > 0`);
+    else if (filter === 'verified') users = await queryAll(`SELECT telegram_id FROM users WHERE telegram_id IS NOT NULL AND is_verified = 1`);
+    else users = await queryAll(`SELECT telegram_id FROM users WHERE telegram_id IS NOT NULL AND password IS NOT NULL`);
+
+    const { sendTg } = require('../utils/notify');
+    let sent = 0;
+    for (const u of users) {
+      try { await sendTg(u.telegram_id, text); sent++; await new Promise(r => setTimeout(r, 50)); }
+      catch(e) {}
+    }
+    res.json({ ok: true, sent, total: users.length });
+  } catch(e) { res.status(500).json({ error: 'Ошибка' }); }
+});
+
+// ── GET /admin/settings — получить настройки ─────────────────────────────────
+router.get('/settings', async (req, res) => {
+  res.json({
+    commission:       process.env.COMMISSION_RATE      || '5',
+    minDeposit:       process.env.MIN_DEPOSIT          || '2',
+    dailyWithdrawLimit: process.env.DAILY_WITHDRAW_LIMIT || '500',
+    aiEnabled:        process.env.ANTHROPIC_API_KEY ? 'true' : 'false',
+    registrationOpen: process.env.REGISTRATION_CLOSED !== 'true' ? 'true' : 'false',
+  });
+});
+
 router.get('/security-logs', async (req, res) => {
   try {
     const { event, ip, limit = 200 } = req.query;
