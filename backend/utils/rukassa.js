@@ -3,14 +3,14 @@ const crypto = require('crypto');
 const qs     = require('querystring');
 
 const SHOP_ID = () => process.env.RUKASSA_SHOP_ID || '';
-const SECRET  = () => process.env.RUKASSA_SECRET  || '';
 const TOKEN   = () => process.env.RUKASSA_TOKEN   || '';
+const SECRET  = () => process.env.RUKASSA_SECRET  || '';
 
 function isConfigured() { return !!(SHOP_ID() && TOKEN()); }
 
 function request(path, params) {
   return new Promise((resolve, reject) => {
-    // RuKassa принимает form-urlencoded, НЕ JSON
+    // RuKassa принимает form-urlencoded
     const data = qs.stringify(params);
     const req = https.request({
       hostname: 'lk.rukassa.io',
@@ -38,15 +38,16 @@ function request(path, params) {
 async function createInvoice({ amount, orderId, comment = '', hookUrl = '', successUrl = '' }) {
   if (!isConfigured()) return { ok: false, error: 'RuKassa не настроен (нужны RUKASSA_SHOP_ID и RUKASSA_TOKEN)' };
 
-  const shopId      = SHOP_ID();
-  const description = comment || `Пополнение баланса на $${amount}`;
+  // order_id должен быть числом (Int) по документации
+  const numericOrderId = Date.now();
 
   const params = {
-    shop_id:          shopId,
-    token:            TOKEN(),
-    order_id:         String(orderId),
-    amount:           String(parseFloat(amount)),
-    data:             description,
+    shop_id:          parseInt(SHOP_ID()),  // Int
+    token:            TOKEN(),              // API токен
+    order_id:         numericOrderId,       // Int
+    amount:           parseFloat(amount),   // Float
+    currency:         'USD',               // валюта
+    data:             JSON.stringify({ original_order_id: String(orderId), comment: comment || '' }),
     notification_url: hookUrl,
     success_url:      successUrl,
     fail_url:         successUrl,
@@ -58,8 +59,9 @@ async function createInvoice({ amount, orderId, comment = '', hookUrl = '', succ
     const res = await request('/api/v1/create', params);
     console.log('[RuKassa] response:', JSON.stringify(res));
 
-    if (res && res.link) return { ok: true, payUrl: res.link, invoiceId: String(res.id || orderId) };
-    if (res && res.url)  return { ok: true, payUrl: res.url,  invoiceId: String(res.id || orderId) };
+    // Документация говорит что возвращает url (не link)
+    if (res && res.url)  return { ok: true, payUrl: res.url,  invoiceId: String(res.id || numericOrderId) };
+    if (res && res.link) return { ok: true, payUrl: res.link, invoiceId: String(res.id || numericOrderId) };
     return { ok: false, error: res?.message || res?.error || JSON.stringify(res) };
   } catch (e) {
     return { ok: false, error: e.message };
@@ -67,7 +69,8 @@ async function createInvoice({ amount, orderId, comment = '', hookUrl = '', succ
 }
 
 function verifyWebhook(body) {
-  if (!SECRET()) return true; // если SECRET не задан — пропускаем проверку
+  // Если SECRET не задан — пропускаем проверку подписи
+  if (!SECRET()) return true;
   try {
     const { shop_id, amount, order_id, sign: s } = body;
     if (!shop_id || !amount || !order_id || !s) return false;
