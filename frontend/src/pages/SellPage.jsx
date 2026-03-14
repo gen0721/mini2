@@ -39,7 +39,7 @@ export default function SellPage() {
   }
 
   return (
-    <div style={{ maxWidth:680, margin:'0 auto', padding:'32px 20px' }}>
+    <div style={{ maxWidth:680, margin:'0 auto', padding:'24px 12px' }}>
       <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:28, marginBottom:8 }}>Разместить товар</h1>
       <p style={{ color:'var(--t3)', marginBottom:28, fontSize:14 }}>Комиссия платформы 5% — списывается только при успешной продаже.</p>
 
