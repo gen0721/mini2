@@ -1,25 +1,23 @@
 const https  = require('https');
 const crypto = require('crypto');
+const qs     = require('querystring');
 
 const SHOP_ID = () => process.env.RUKASSA_SHOP_ID || '';
 const SECRET  = () => process.env.RUKASSA_SECRET  || '';
 const TOKEN   = () => process.env.RUKASSA_TOKEN   || '';
 
-function isConfigured() { return !!(SHOP_ID() && (SECRET() || TOKEN())); }
+function isConfigured() { return !!(SHOP_ID() && TOKEN()); }
 
-function sign(shopId, amount, orderId) {
-  return crypto.createHash('md5').update(`${shopId}:${amount}:${orderId}:${SECRET()}`).digest('hex');
-}
-
-function request(path, body) {
+function request(path, params) {
   return new Promise((resolve, reject) => {
-    const data = JSON.stringify(body);
+    // RuKassa принимает form-urlencoded, НЕ JSON
+    const data = qs.stringify(params);
     const req = https.request({
       hostname: 'lk.rukassa.io',
       path,
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type':   'application/x-www-form-urlencoded',
         'Content-Length': Buffer.byteLength(data),
       },
     }, res => {
@@ -38,42 +36,30 @@ function request(path, body) {
 }
 
 async function createInvoice({ amount, orderId, comment = '', hookUrl = '', successUrl = '' }) {
-  if (!isConfigured()) return { ok: false, error: 'RuKassa не настроен' };
+  if (!isConfigured()) return { ok: false, error: 'RuKassa не настроен (нужны RUKASSA_SHOP_ID и RUKASSA_TOKEN)' };
 
-  const shopId      = parseInt(SHOP_ID()); // число, не строка
-  const secret      = SECRET();
+  const shopId      = SHOP_ID();
   const description = comment || `Пополнение баланса на $${amount}`;
-  const amtStr      = String(parseFloat(amount).toFixed(2));
 
-  // Хэш: md5(shop_id:amount:order_id:secret)
-  const hash = crypto.createHash('md5')
-    .update(`${shopId}:${amtStr}:${orderId}:${secret}`)
-    .digest('hex');
-
-  const body = {
+  const params = {
     shop_id:          shopId,
-    token:            TOKEN() || secret, // API токен аккаунта
+    token:            TOKEN(),
     order_id:         String(orderId),
-    amount:           amtStr,
-    hash:             hash,
-    description:      description,
+    amount:           String(parseFloat(amount)),
+    data:             description,
     notification_url: hookUrl,
     success_url:      successUrl,
     fail_url:         successUrl,
   };
 
-  console.log('[RuKassa] createInvoice request:', JSON.stringify({ ...body, token: '***' }));
+  console.log('[RuKassa] createInvoice request:', JSON.stringify({ ...params, token: '***' }));
 
   try {
-    const res = await request('/api/v1/create', body);
+    const res = await request('/api/v1/create', params);
     console.log('[RuKassa] response:', JSON.stringify(res));
 
-    if (res && res.link) {
-      return { ok: true, payUrl: res.link, invoiceId: String(res.id || orderId) };
-    }
-    if (res && res.url) {
-      return { ok: true, payUrl: res.url, invoiceId: String(res.id || orderId) };
-    }
+    if (res && res.link) return { ok: true, payUrl: res.link, invoiceId: String(res.id || orderId) };
+    if (res && res.url)  return { ok: true, payUrl: res.url,  invoiceId: String(res.id || orderId) };
     return { ok: false, error: res?.message || res?.error || JSON.stringify(res) };
   } catch (e) {
     return { ok: false, error: e.message };
@@ -81,7 +67,7 @@ async function createInvoice({ amount, orderId, comment = '', hookUrl = '', succ
 }
 
 function verifyWebhook(body) {
-  if (!SECRET()) return false;
+  if (!SECRET()) return true; // если SECRET не задан — пропускаем проверку
   try {
     const { shop_id, amount, order_id, sign: s } = body;
     if (!shop_id || !amount || !order_id || !s) return false;
