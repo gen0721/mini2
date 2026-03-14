@@ -45,7 +45,7 @@ export default function ProfilePage() {
   }, [id, me, hydrated])
 
   if (!hydrated || loading) return (
-    <div style={{ maxWidth:900, margin:'0 auto', padding:'40px 20px' }}>
+    <div style={{ maxWidth:900, margin:'0 auto', padding:'24px 12px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:20, marginBottom:32 }}>
         <div className="skel" style={{ width:96, height:96, borderRadius:20, flexShrink:0 }}/>
         <div style={{ flex:1, display:'flex', flexDirection:'column', gap:10 }}>
@@ -115,7 +115,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Контент поверх */}
-      <div style={{ position:'relative', zIndex:1, maxWidth:1100, margin:'0 auto', padding:'32px 20px' }}>
+      <div style={{ position:'relative', zIndex:1, maxWidth:1100, margin:'0 auto', padding:'24px 12px' }}>
       <div className="profile-grid">
 
         {/* Левая колонка — ProfileCard */}
