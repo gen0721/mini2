@@ -340,6 +340,27 @@ router.post('/:id/review', auth, async (req, res) => {
 });
 
 // ── Internal: completeDeal ─────────────────────────────────────────────────────
+async function payReferralReward(sellerId, dealId, dealAmount) {
+  try {
+    const seller = await queryOne('SELECT ref_by FROM users WHERE id=$1', [sellerId]);
+    if (!seller?.ref_by) return;
+    const partner = await queryOne('SELECT id, partner_percent FROM users WHERE ref_code=$1 AND is_partner=1', [seller.ref_by]);
+    if (!partner) return;
+    const reward = Math.round(dealAmount * (partner.partner_percent || 10) / 100 * 100) / 100;
+    if (reward <= 0) return;
+    await run('INSERT INTO referral_rewards (id, partner_id, referred_user_id, deal_id, amount) VALUES ($1,$2,$3,$4,$5)',
+      [require('crypto').randomUUID(), partner.id, sellerId, dealId, reward]);
+    await run('UPDATE users SET partner_earned=partner_earned+$1, balance=balance+$1 WHERE id=$2', [reward, partner.id]);
+    const notify = require('../utils/notify');
+    const p = await queryOne('SELECT telegram_id FROM users WHERE id=$1', [partner.id]);
+    if (p?.telegram_id) {
+      notify.sendTg(p.telegram_id,
+        '💰 <b>Реферальное вознаграждение!</b>\n\n+$' + reward.toFixed(2) + ' за сделку вашего реферала\nСумма сделки: $' + dealAmount
+      ).catch(() => {});
+    }
+  } catch(e) { console.error('[Referral]', e.message); }
+}
+
 async function completeDeal(deal, reason = 'auto') {
   await transaction(async (client) => {
     const [seller, buyer, product] = await Promise.all([
