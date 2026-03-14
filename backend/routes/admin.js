@@ -424,6 +424,50 @@ router.get('/settings', async (req, res) => {
   });
 });
 
+// ── Уровни продавца ──────────────────────────────────────────────────────────
+const SELLER_LEVELS = {
+  newcomer:    { min:0,  max:4,  label:'Новичок',  emoji:'🌱', color:'#6b7280' },
+  experienced: { min:5,  max:19, label:'Опытный',  emoji:'⭐', color:'#3b82f6' },
+  pro:         { min:20, max:49, label:'Про',       emoji:'💎', color:'#8b5cf6' },
+  legend:      { min:50, max:Infinity, label:'Легенда', emoji:'👑', color:'#f5c842' },
+};
+
+function calcLevel(totalSales) {
+  const s = parseInt(totalSales) || 0;
+  if (s >= 50) return 'legend';
+  if (s >= 20) return 'pro';
+  if (s >= 5)  return 'experienced';
+  return 'newcomer';
+}
+
+// ── POST /admin/users/:id/set-level — установить уровень вручную ──────────────
+router.post('/users/:id/set-level', async (req, res) => {
+  try {
+    const { level, override } = req.body;
+    if (!SELLER_LEVELS[level]) return res.status(400).json({ error: 'Неверный уровень' });
+    await run(
+      'UPDATE users SET seller_level=$1, level_override=$2 WHERE id=$3',
+      [level, override ? 1 : 0, req.params.id]
+    );
+    res.json({ ok: true, level, label: SELLER_LEVELS[level].label });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── POST /admin/users/recalc-levels — пересчитать все уровни автоматически ────
+router.post('/users/recalc-levels', async (req, res) => {
+  try {
+    const users = await queryAll('SELECT id, total_sales, level_override FROM users WHERE password IS NOT NULL');
+    let updated = 0;
+    for (const u of users) {
+      if (u.level_override) continue; // не трогаем ручные
+      const level = calcLevel(u.total_sales);
+      await run('UPDATE users SET seller_level=$1 WHERE id=$2', [level, u.id]);
+      updated++;
+    }
+    res.json({ ok: true, updated });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── GET /admin/chats — все диалоги пользователей ─────────────────────────────
 router.get('/chats', async (req, res) => {
   try {
