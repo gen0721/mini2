@@ -395,7 +395,7 @@ export default function DealsPage() {
             {loading ? (
               [0,1,2,3].map(i => <div key={i} className="skel" style={{ height:80, borderRadius:14 }}/>)
             ) : deals.length===0 ? (
-              <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--t3)' }}>
+              <div style={{ textAlign:'center', padding:'24px 12px', color:'var(--t3)' }}>
                 <Package size={36} strokeWidth={0.75} style={{ opacity:0.25, marginBottom:10 }}/>
                 <div style={{ fontFamily:'var(--font-h)', fontWeight:700 }}>Сделок нет</div>
               </div>
