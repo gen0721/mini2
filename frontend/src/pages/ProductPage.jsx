@@ -6,18 +6,18 @@ import { api, useStore } from '../store'
 import toast from 'react-hot-toast'
 
 export default function ProductPage() {
-  const {
-  useMeta(product ? {
-    title: product.title,
-    description: `${product.title} за $${product.price}. Безопасная покупка через гарант на Minions Market.`,
-    keywords: `${product.title}, ${product.category}, купить`,
-  } : {})
- id }   = useParams()
+  const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useStore()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [buying, setBuying]   = useState(false)
+
+  useMeta(product ? {
+    title: product.title,
+    description: `${product.title} за $${product.price}. Безопасная покупка через гарант на Minions Market.`,
+    keywords: `${product.title}, ${product.category}, купить`,
+  } : { title: 'Товар' })
   const [imgIdx, setImgIdx]   = useState(0)
 
   useEffect(() => {
