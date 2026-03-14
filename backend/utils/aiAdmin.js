@@ -622,67 +622,29 @@ async function handleUserQuestion(telegramId, question) {
     let systemPrompt, userContext;
 
     if (isOwner) {
-      // ── ХОЗЯИН — полный доступ к данным сайта ────────────────────────────
-      // Собираем статистику сайта для контекста
-      const now   = Math.floor(Date.now() / 1000);
-      const h24   = now - 86400;
+      // ── ХОЗЯИН — загружаем только нужные данные по запросу ───────────────
+      const now = Math.floor(Date.now() / 1000);
+      const h24 = now - 86400;
 
-      const [siteStats, recentDeals, topProducts] = await Promise.all([
-        queryOne(`
+      let siteContext = '';
+      try {
+        const siteStats = await queryOne(`
           SELECT
             (SELECT COUNT(*) FROM users WHERE password IS NOT NULL) as total_users,
-            (SELECT COUNT(*) FROM users WHERE created_at >= $1) as new_users_24h,
             (SELECT COUNT(*) FROM products WHERE status='active') as active_products,
-            (SELECT COUNT(*) FROM deals WHERE status='active') as active_deals,
             (SELECT COUNT(*) FROM deals WHERE status='disputed') as disputes,
-            (SELECT COALESCE(SUM(amount),0) FROM transactions WHERE type='commission' AND status='completed' AND created_at >= $1) as revenue_24h,
-            (SELECT COALESCE(SUM(amount),0) FROM transactions WHERE type='commission' AND status='completed') as revenue_total
-        `, [h24]),
-        queryAll(`
-          SELECT d.id, d.status, d.amount, p.title as product, b.username as buyer, s.username as seller
-          FROM deals d
-          LEFT JOIN products p ON p.id=d.product_id
-          LEFT JOIN users b ON b.id=d.buyer_id
-          LEFT JOIN users s ON s.id=d.seller_id
-          WHERE d.created_at >= $1
-          ORDER BY d.created_at DESC LIMIT 5
-        `, [h24]),
-        queryAll(`SELECT title, price, views, status FROM products WHERE status='active' ORDER BY views DESC LIMIT 5`),
-      ]);
+            (SELECT COALESCE(SUM(amount),0) FROM transactions WHERE type='commission' AND status='completed' AND created_at >= $1) as revenue_24h
+        `, [h24]);
+        siteContext = `Статистика сайта: ${siteStats.total_users} пользователей, ${siteStats.active_products} активных товаров, споров: ${siteStats.disputes}, доход за 24ч: $${parseFloat(siteStats.revenue_24h).toFixed(2)}`;
+      } catch(e) { siteContext = 'Статистика недоступна'; }
 
-      userContext = `
-ДАННЫЕ САЙТА (актуальные):
-- Всего пользователей: ${siteStats.total_users}
-- Новых за 24ч: ${siteStats.new_users_24h}
-- Активных товаров: ${siteStats.active_products}
-- Активных сделок: ${siteStats.active_deals}
-- Открытых споров: ${siteStats.disputes}
-- Доход за 24ч: $${parseFloat(siteStats.revenue_24h).toFixed(2)}
-- Доход всего: $${parseFloat(siteStats.revenue_total).toFixed(2)}
+      userContext = `${siteContext}
 
-Последние сделки (24ч):
-${recentDeals.map(d => `- ${d.product} | @${d.buyer}→@${d.seller} | $${d.amount} | ${d.status}`).join('\n') || 'нет'}
+Вопрос: ${question}`;
 
-Топ товары по просмотрам:
-${topProducts.map(p => `- ${p.title} | $${p.price} | ${p.views} просмотров`).join('\n') || 'нет'}
-
-Вопрос хозяина: ${question}`;
-
-      systemPrompt = `Ты умный персональный AI-ассистент и советник хозяина маркетплейса Minions Market.
-
-Общайся как настоящий умный собеседник — живо, естественно, по-русски. Не используй шаблонные фразы.
-
-У тебя есть доступ к актуальной статистике сайта — используй данные в ответах когда это уместно.
-
-Ты можешь:
-- Отвечать на любые вопросы о сайте, бизнесе, пользователях, сделках
-- Давать советы по развитию, маркетингу, улучшению платформы
-- Анализировать статистику и делать выводы
-- Обсуждать технические вопросы
-- Просто общаться на темы связанные с бизнесом и маркетплейсом
-- Отвечать развёрнуто когда нужно, кратко когда достаточно
-
-Будь полезным, умным и естественным собеседником. Не ограничивай себя.`;
+      systemPrompt = `Ты умный AI-ассистент хозяина маркетплейса Minions Market (игровые товары).
+Общайся свободно и естественно по-русски. Используй данные сайта в ответах.
+Помогай с вопросами о сайте, статистике, бизнесе, пользователях, технических вопросах.`;
 
     } else {
       // ── ОБЫЧНЫЙ ПОЛЬЗОВАТЕЛЬ — только его данные и публичная информация ──
