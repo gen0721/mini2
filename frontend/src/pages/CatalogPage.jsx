@@ -3,6 +3,7 @@ import useMeta from '../hooks/useMeta'
 import { Gamepad2, Coins, Sword, Palette, KeyRound, Star, Rocket, Package, Search } from '../components/Icon'
 import DarkVeil from '../components/DarkVeil/DarkVeil'
 import { useSearchParams } from 'react-router-dom'
+import { useRef } from 'react'
 import { api } from '../store'
 import ProductCard from '../components/ProductCard'
 
@@ -35,6 +36,15 @@ export default function CatalogPage() {
   const [searchInput, setSearchInput] = useState(search)
   const [minP, setMinP] = useState(minPrice)
   const [maxP, setMaxP] = useState(maxPrice)
+  const searchRef = useRef(null)
+
+  // Автофокус на поиске если пришли с кнопки Поиск
+  useEffect(() => {
+    if (sp.get('focus') === 'search' && searchRef.current) {
+      searchRef.current.focus()
+      searchRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [])
 
   useMeta({
     title: 'Каталог товаров — игровые аккаунты, валюта, предметы',
@@ -87,8 +97,25 @@ export default function CatalogPage() {
       <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:32, marginBottom:24 }}>Каталог</h1>
 
       <div style={{ display:'flex', gap:10, marginBottom:24 }}>
-        <input className="inp" placeholder="Поиск товаров..." value={searchInput}
-          onChange={e => setSearchInput(e.target.value)} onKeyDown={e => e.key==='Enter' && applySearch()} style={{ flex:1 }}/>
+        <input
+          ref={searchRef}
+          className="inp"
+          placeholder="🔍 Поиск товаров..."
+          value={searchInput}
+          onChange={e => {
+            setSearchInput(e.target.value)
+            // Мгновенный поиск с задержкой 500мс
+            clearTimeout(window._searchTimer)
+            window._searchTimer = setTimeout(() => {
+              const ns = new URLSearchParams(sp)
+              if (e.target.value) ns.set('search', e.target.value)
+              else ns.delete('search')
+              setSp(ns)
+            }, 500)
+          }}
+          onKeyDown={e => e.key==='Enter' && applySearch()}
+          style={{ flex:1 }}
+        />
         <input className="inp" placeholder="$ от" value={minP} onChange={e => setMinP(e.target.value)} style={{ width:90 }}/>
         <input className="inp" placeholder="$ до" value={maxP} onChange={e => setMaxP(e.target.value)} style={{ width:90 }}/>
         <button className="btn btn-primary" onClick={applySearch}>Найти</button>
