@@ -239,6 +239,7 @@ initSchema()
   .then(async () => {
     // Миграция колонок для AI Admin (выполняется автоматически при каждом старте)
     await run(`ALTER TABLE products ADD COLUMN IF NOT EXISTS ai_moderated    INTEGER DEFAULT 0`).catch(() => {});
+    await run(`ALTER TABLE messages  ADD COLUMN IF NOT EXISTS image           TEXT DEFAULT NULL`).catch(() => {});
     await run(`ALTER TABLE users    ADD COLUMN IF NOT EXISTS seller_level    TEXT DEFAULT 'newcomer'`).catch(() => {});
     await run(`ALTER TABLE users    ADD COLUMN IF NOT EXISTS level_override   INTEGER DEFAULT 0`).catch(() => {});
     // Реферальная система
