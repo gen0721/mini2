@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useStore, api } from '../store'
 
 // ── Иконки для нижней навигации ────────────────────────────────────────────────
+const IconHome     = () => <Home size={22} strokeWidth={1.75}/>
 const IconSearch   = () => <Search size={22} strokeWidth={1.75}/>
 const IconGrid     = () => <LayoutGrid size={22} strokeWidth={1.75}/>
 const IconPlus     = () => <Plus size={26} strokeWidth={2.5}/>
@@ -371,9 +372,9 @@ export default function Layout({ children }) {
         boxShadow:'0 -4px 24px rgba(0,0,0,0.4)',
       }}>
         {[
-          { to:'/catalog?focus=search', icon:<IconSearch/>,   label:'Поиск' },
-          { to:'/catalog', icon:<IconGrid/>,    label:'Каталог' },
-          { to:'/sell',    icon:<IconPlus/>,    label:'Продать', center:true },
+          { to:'/',        icon:<IconHome/>,      label:'Главная' },
+          { to:'/catalog', icon:<IconGrid/>,      label:'Каталог' },
+          { to:'/sell',    icon:<IconPlus/>,      label:'Продать', center:true },
           { to:'/messages', icon:<IconMessages/>, label:'Чаты' },
           { to: user ? '/profile' : '/auth', icon:<IconProfile/>, label: user ? 'Профиль' : 'Войти' },
         ].map(item => (
