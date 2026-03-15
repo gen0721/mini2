@@ -241,6 +241,65 @@ router.post('/withdraw', auth, async (req, res) => {
   }
 });
 
+// ── POST /wallet/deposit/nowpayments ─────────────────────────────────────────
+router.post('/deposit/nowpayments', auth, async (req, res) => {
+  try {
+    const nowpayments = require('../utils/nowpayments');
+    if (!nowpayments.isConfigured()) return res.status(400).json({ error: 'NOWPayments не настроен' });
+
+    const amount = parseFloat(req.body.amount);
+    if (!amount || amount < 1) return res.status(400).json({ error: 'Минимум $1' });
+
+    const orderId = `np_${req.userId}_${Date.now()}`;
+    const result  = await nowpayments.createInvoice({
+      amount, orderId,
+      description: `Пополнение Minions Market на $${amount}`,
+    });
+
+    if (!result.ok) return res.status(502).json({ error: result.error });
+
+    const user = await queryOne('SELECT balance FROM users WHERE id = $1', [req.userId]);
+    await run(`
+      INSERT INTO transactions (id, user_id, type, amount, status, description, gateway_type, gateway_invoice_id, gateway_pay_url, gateway_order_id, balance_before)
+      VALUES ($1,$2,'deposit',$3,'pending','Пополнение NOWPayments','nowpayments',$4,$5,$6,$7)
+    `, [crypto.randomUUID(), req.userId, amount, result.invoiceId, result.payUrl, orderId, user?.balance || 0]);
+
+    res.json({ payUrl: result.payUrl, orderId });
+  } catch(e) {
+    console.error('NOWPayments deposit error:', e);
+    res.status(500).json({ error: 'Ошибка платёжной системы' });
+  }
+});
+
+// ── POST /wallet/webhook/nowpayments ─────────────────────────────────────────
+router.post('/webhook/nowpayments', async (req, res) => {
+  try {
+    const nowpayments = require('../utils/nowpayments');
+    const signature   = req.headers['x-nowpayments-sig'];
+
+    if (!nowpayments.verifyWebhook(req.body, signature)) {
+      console.warn('[NOWPayments] Invalid webhook signature');
+      return res.status(400).send('Invalid signature');
+    }
+
+    const { payment_status, order_id } = req.body;
+    console.log('[NOWPayments] webhook:', payment_status, order_id);
+
+    if (!['finished', 'confirmed', 'partially_paid'].includes(payment_status)) {
+      return res.send('ok');
+    }
+
+    const tx = await queryOne('SELECT * FROM transactions WHERE gateway_order_id = $1', [order_id]);
+    if (!tx || tx.status === 'completed') return res.send('ok');
+
+    await creditUser(tx);
+    res.send('ok');
+  } catch(e) {
+    console.error('[NOWPayments] webhook error:', e.message);
+    res.status(500).send('error');
+  }
+});
+
 // ── Internal: creditUser ───────────────────────────────────────────────────────
 async function creditUser(tx) {
   await transaction(async (client) => {
