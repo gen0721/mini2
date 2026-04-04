@@ -185,8 +185,14 @@ app.post('/api/tg-webhook/:token', (req, res) => {
   });
 });
 
+// Инициализация Telegram бота
+console.log('[ENV] TELEGRAM_BOT_TOKEN:', process.env.TELEGRAM_BOT_TOKEN ? 'SET (' + process.env.TELEGRAM_BOT_TOKEN.slice(0,10) + '...)' : 'NOT SET');
+console.log('[ENV] BACKEND_URL:', process.env.BACKEND_URL || 'NOT SET');
 if (process.env.TELEGRAM_BOT_TOKEN) {
+  console.log('[Bot] Token found, initializing in 2s...');
   setTimeout(() => getBot(), 2000);
+} else {
+  console.log('[Bot] TELEGRAM_BOT_TOKEN not set, skipping bot init');
 }
 
 // ── Static frontend ────────────────────────────────────────────────────────────
