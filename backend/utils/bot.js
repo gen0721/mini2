@@ -78,8 +78,10 @@ function askClaude(system, userMsg) {
 function setWebhook() {
   const token = TOKEN();
   const base  = BASE_URL();
+  console.log('[Bot] setWebhook called. TOKEN exists:', !!token, 'BASE_URL:', base || '(empty)');
   if (!token || !base) {
     console.warn('[Bot] TELEGRAM_BOT_TOKEN или BACKEND_URL не заданы');
+    console.warn('[Bot] TOKEN length:', token?.length || 0, '| BASE_URL:', base || '(not set)');
     return;
   }
   const webhookUrl = base + '/api/tg-webhook/' + token;
