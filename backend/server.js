@@ -160,17 +160,28 @@ app.get('/:file([a-z0-9_\-]+\.html)', (req, res) => {
 });
 
 // ── Routes ─────────────────────────────────────────────────────────────────────
+// Поддержка как /api/*, так и /* (для Vercel experimentalServices с routePrefix: /api)
 app.use('/api/auth',       require('./routes/auth'));
+app.use('/auth',           require('./routes/auth'));
 app.use('/api/products',   require('./routes/products'));
+app.use('/products',       require('./routes/products'));
 app.use('/api/deals',      require('./routes/deals'));
+app.use('/deals',          require('./routes/deals'));
 app.use('/api/wallet',     require('./routes/wallet'));
+app.use('/wallet',         require('./routes/wallet'));
 app.use('/api/users',      require('./routes/users'));
+app.use('/users',          require('./routes/users'));
 app.use('/api/categories', require('./routes/categories'));
+app.use('/categories',     require('./routes/categories'));
 app.use('/api/admin',      require('./routes/admin'));
+app.use('/admin',          require('./routes/admin'));
 app.use('/api/referral',   require('./routes/referral'));
+app.use('/referral',       require('./routes/referral'));
 app.use('/api/messages',   require('./routes/messages'));
+app.use('/messages',       require('./routes/messages'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
+app.get('/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
 // ── Telegram bot (webhook mode) ───────────────────────────────────────────────
 const { getBot, handleUpdate } = require('./utils/bot');
@@ -180,6 +191,15 @@ app.post('/api/tg-webhook/:token', (req, res) => {
   if (req.params.token !== process.env.TELEGRAM_BOT_TOKEN) return;
   handleUpdate(req.body).catch(e => {
     // ECONNRESET — Telegram закрыл соединение, не критично
+    if (e.code === 'ECONNRESET' || e.message?.includes('ECONNRESET')) return;
+    console.error('[Webhook] error:', e.message);
+  });
+});
+
+app.post('/tg-webhook/:token', (req, res) => {
+  res.sendStatus(200);
+  if (req.params.token !== process.env.TELEGRAM_BOT_TOKEN) return;
+  handleUpdate(req.body).catch(e => {
     if (e.code === 'ECONNRESET' || e.message?.includes('ECONNRESET')) return;
     console.error('[Webhook] error:', e.message);
   });
