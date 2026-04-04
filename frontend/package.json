@@ -17,10 +17,9 @@
     "postprocessing": "^6.33.2",
     "ogl": "^1.0.9",
     "motion": "^11.11.0",
-    "lucide-react": "^0.383.0"
+    "lucide-react": "^0.383.0",
+    "vite": "^5.0.0",
+    "@vitejs/plugin-react": "^4.2.0"
   },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.2.0",
-    "vite": "^5.0.0"
-  }
+  "devDependencies": {}
 }
